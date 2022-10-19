@@ -2,14 +2,20 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2022-10-20 02:10:43
- * @FilePath: /deepl-api/README.md
+ * @LastEditTime: 2022-10-20 02:22:15
+ * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
  * Copyright © 2022 by Vincent, All Rights Reserved. 
 -->
 # DeepLX
 Permanently free DeepL API written in Golang
+
+## Description
+- `deeplx` in only run in port `1199`, later versions will do the specified port.
+- `deeplx` is listening to `0.0.0.0:1199` by default.
+- `deeplx` is using `DeepL` Free API.
+- `deeplx` is unlimited to the number of requests.
 
 ## Run on Mac
 1. Download  the latest release of DeepLX.
