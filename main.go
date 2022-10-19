@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"math/rand"
@@ -11,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
 )
 
@@ -54,10 +54,6 @@ func init_data(source_lang string, target_lang string) *PostData {
 				SourceLangUserSelected: source_lang,
 				TargetLang:             target_lang,
 			},
-			// CommonJobParams: CommonJobParams{
-			// 	WasSpoken:       false,
-			// 	RegionalVariant: "en-US",
-			// },
 		},
 	}
 }
@@ -82,77 +78,117 @@ func getTimeStamp(i_count int64) int64 {
 
 }
 
+type ResData struct {
+	Trans_Text  string `json:"text"`
+	Source_Lang string `json:"source_lang"`
+	Target_Lang string `json:"target_lang"`
+}
+
 func main() {
+	r := gin.Default()
+	// r.SetTrustedProxies([]string{"192.168.36.153"})
+	r.GET("/", func(c *gin.Context) {
 
-	url := "https://www2.deepl.com/jsonrpc"
-	id := getRandomNumber()
-	fmt.Printf("ID = %d\n", id)
+		c.JSON(200, gin.H{
+			"code": 200,
+			"msg":  "DeepL API, Made by sjlleo and missuo. Go to /translate with POST.",
+		})
 
-	// ZH - 中文
-	// EN - 英文
-	post_data := init_data("", "EN")
+	})
+	r.POST("/translate", func(c *gin.Context) {
+		reqj := ResData{}
+		c.BindJSON(&reqj)
+		// fmt.Printf("%v", &reqj)
+		source_lang := reqj.Source_Lang
+		target_lang := reqj.Target_Lang
+		// fmt.Println(reqj)
+		if source_lang == "" {
+			source_lang = "ZH"
+		}
+		if target_lang == "" {
+			target_lang = "EN"
+		}
+		translate_text := reqj.Trans_Text
+		// fmt.Printf("%v", translate_text)
+		if translate_text != "" {
 
-	translate_text := `
-	一是课题来源渠道，比如指导性课题、指令性课题、机构科研项目等,
-	二是课题选题来源渠道，比如课题指南、自拟选题等,
-	三是有时候课题来源也理解为课题选题依据。
-	一般来说，课题来源主要是指课题的从什么地方获得，即课题的方向。
-	`
-	text := Text{
-		Text: translate_text,
-		// 不要尝试修改 RequestAlternatives，会被 Ban IP
-		RequestAlternatives: 3,
-	}
+			url := "https://www2.deepl.com/jsonrpc"
+			id := getRandomNumber()
 
-	// 设置 id
-	post_data.ID = id
-	// 设置翻译文本
-	post_data.Params.Texts = append(post_data.Params.Texts, text)
-	// 设置时间戳
-	post_data.Params.Timestamp = getTimeStamp(get_i_count(translate_text))
+			post_data := init_data(source_lang, target_lang)
 
-	post_byte, _ := json.Marshal(post_data)
+			text := Text{
+				Text:                translate_text,
+				RequestAlternatives: 3,
+			}
 
-	post_str := string(post_byte)
+			// set id
+			post_data.ID = id
+			// set text
+			post_data.Params.Texts = append(post_data.Params.Texts, text)
+			// set timestamp
+			post_data.Params.Timestamp = getTimeStamp(get_i_count(translate_text))
 
-	// 判断是否需要加空格
-	if (id+5)%29 == 0 || (id+3)%13 == 0 {
-		post_str = strings.Replace(post_str, "\"method\":\"", "\"method\" : \"", -1)
-	} else {
-		post_str = strings.Replace(post_str, "\"method\":\"", "\"method\": \"", -1)
-	}
+			post_byte, _ := json.Marshal(post_data)
 
-	post_byte = []byte(post_str)
+			post_str := string(post_byte)
 
-	reader := bytes.NewReader(post_byte)
-	request, err := http.NewRequest("POST", url, reader)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+			// add space if necessary
+			if (id+5)%29 == 0 || (id+3)%13 == 0 {
+				post_str = strings.Replace(post_str, "\"method\":\"", "\"method\" : \"", -1)
+			} else {
+				post_str = strings.Replace(post_str, "\"method\":\"", "\"method\": \"", -1)
+			}
 
-	request.Header.Set("Content-Type", "application/json")
-	client := &http.Client{}
-	resp, err := client.Do(request)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+			post_byte = []byte(post_str)
 
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	res := gjson.ParseBytes(body)
-	if res.Get("result.lang_is_confident").String() == "false" {
-		fmt.Println("引擎可能无法正确判断源文语言")
-	}
-	// 源语言
-	fmt.Println(res.Get("result.lang").String())
-	// 译文
-	fmt.Println(res.Get("result.texts.0.text").String())
-	// 译文候选一
-	// fmt.Println(res.Get("result.texts.0.alternatives.0.text").String())
-	// 译文候选二
-	// fmt.Println(res.Get("result.texts.0.alternatives.1.text").String())
-	// 译文候选三
-	// fmt.Println(res.Get("result.texts.0.alternatives.2.text").String())
+			reader := bytes.NewReader(post_byte)
+			request, err := http.NewRequest("POST", url, reader)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			request.Header.Set("Content-Type", "application/json")
+			client := &http.Client{}
+			resp, err := client.Do(request)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			defer resp.Body.Close()
+			body, _ := io.ReadAll(resp.Body)
+			res := gjson.ParseBytes(body)
+			// fmt.Println(res)
+			// fmt.Println(res.Get("result").Bool())
+			if res.Get("error.code").String() == "-32600" {
+				log.Println(res.Get("error").String())
+				c.JSON(406, gin.H{
+					"code": 406,
+					"msg":  "target_lang is not supported",
+				})
+				return
+			} else {
+				c.JSON(200, gin.H{
+					"code": 200,
+					"id":   id,
+					"data": res.Get("result.texts.0.text").String(),
+				})
+			}
+
+			// data = res.Get("result.texts.0.text").String()
+			// if res.Get("result.lang_is_confident").String() == "false" {
+
+			// fmt.Printf(res.Get("result.texts.0.text").String())
+
+		} else {
+			c.JSON(404, gin.H{
+				"code": 404,
+				"msg":  "no text found",
+			})
+		}
+	})
+	r.Run(":1199") // listen and serve on 0.0.0.0:1199
+
 }
