@@ -9,7 +9,7 @@
  * Copyright © 2022 by Vincent, All Rights Reserved. 
 -->
 # DeepLX
-Permanently free DeepL API written in Go
+Permanently free DeepL API written in Golang
 
 ## Run on Mac
 1. Download  the latest release of DeepLX.
@@ -31,7 +31,7 @@ launchctl start /Library/LaunchAgents/me.missuo.deeplx.plist
 1. Install [bob-plugin-deeplx](https://github.com/clubxdev/bob-plugin-deeplx) on Bob.
 
 2. Setup the API.
-![9a75c26ad6e8bd9b7582c](https://missuo.ru/file/9a75c26ad6e8bd9b7582c.png)
+![9a75c26ad6e8bd9b7582c](https://telegraph.eowo.us/file/9a75c26ad6e8bd9b7582c.png)
 
 ## Contributors
 - [Leo Shen](https://github.com/sjlleo)
