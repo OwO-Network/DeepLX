@@ -23,9 +23,9 @@ Permanently free DeepL API written in Golang
 sudo mv deeplx_darwin_amd64 /usr/local/bin/deeplx
 ```
 
-2. Download the `me.missuo.deeplx.plist` to `/Users/vincent/Library/LaunchAgents`.
+2. Download the `me.missuo.deeplx.plist` to `/Users/YOUR_USERNAME/Library/LaunchAgents`.
 ```bash
-wget https://raw.githubusercontent.com/OwO-Network/DeepLX/main/me.missuo.deeplx.plist -O /Users/vincent/Library/LaunchAgents/me.missuo.deeplx.plist
+wget https://raw.githubusercontent.com/OwO-Network/DeepLX/main/me.missuo.deeplx.plist -O /Users/YOUR_USERNAME/Library/LaunchAgents/me.missuo.deeplx.plist
 ```
 3. Run following command.
 ```bash
