@@ -33,5 +33,7 @@ jobs:
             dist/deeplx_openbsd_arm64
             dist/deeplx_freebsd_amd64
             dist/deeplx_freebsd_arm64
+            dist/deeplx_windows_amd64
+            dist/deeplx_windows_386
         env:
           GITHUB_TOKEN: ${{ secrets.GT_Token }}
