@@ -85,6 +85,8 @@ type ResData struct {
 }
 
 func main() {
+	// create a random id
+	id := getRandomNumber()
 	r := gin.Default()
 	// r.SetTrustedProxies([]string{"192.168.36.153"})
 	r.GET("/", func(c *gin.Context) {
@@ -95,6 +97,7 @@ func main() {
 		})
 
 	})
+
 	r.POST("/translate", func(c *gin.Context) {
 		reqj := ResData{}
 		c.BindJSON(&reqj)
@@ -113,7 +116,8 @@ func main() {
 		if translate_text != "" {
 
 			url := "https://www2.deepl.com/jsonrpc"
-			id := getRandomNumber()
+
+			id = id + 1
 
 			post_data := init_data(source_lang, target_lang)
 
