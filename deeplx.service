@@ -1,0 +1,14 @@
+[Unit]
+Description=DeepLX Service
+After=network.target nss-lookup.target
+Wants=network.target
+
+[Service]
+User=root
+Group=root
+Type=simple
+WorkingDirectory=/usr/bin/
+ExecStart=/usr/bin/deeplx
+
+[Install]
+WantedBy=multi-user.target
