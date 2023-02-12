@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2022-10-20 02:22:15
+ * @LastEditTime: 2023-02-12 09:29:40
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -12,12 +12,27 @@
 Permanently free DeepL API written in Golang
 
 ## Description
-- `deeplx` in only run in port `1199`, later versions will do the specified port.
-- `deeplx` is listening to `0.0.0.0:1199` by default.
+- `deeplx` in only run in port `1188`, later versions will do the specified port.
+- `deeplx` is listening to `0.0.0.0:1188` by default.
 - `deeplx` is using `DeepL` Free API.
 - `deeplx` is unlimited to the number of requests.
 
-## Run on Mac
+## Usage
+### Request Parameters
+- text: string
+- source_lang: string
+- target_lang: string
+
+### Response
+```json
+{
+  "code": 200,
+  "data": "Hello world",
+  "id": 8305092005
+}
+```
+
+### Run on Mac
 1. Download  the latest release of DeepLX.
 ```bash
 sudo mv deeplx_darwin_amd64 /usr/local/bin/deeplx
@@ -39,10 +54,9 @@ launchctl start /Library/LaunchAgents/me.missuo.deeplx.plist
 2. Setup the API.
 ![9a75c26ad6e8bd9b7582c](https://telegraph.eowo.us/file/9a75c26ad6e8bd9b7582c.png)
 
-## Contributors
-- [Leo Shen](https://github.com/sjlleo)
-- [Vincent Young](https://github.com/missuo)
-
-## License
-MIT License
-
+## Docker Backup for zu1k
+```shell
+docker run -itd -p 7373:80 missuo/deeplx-bk
+```
+## Author
+**DeepL X** © [Vincent Young](https://github.com/missuo) & [Leo Shen](https://github.com/sjlleo), Released under the [MIT](./LICENSE) License.<br>
