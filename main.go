@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"math/rand"
@@ -21,15 +22,16 @@ type Lang struct {
 
 type CommonJobParams struct {
 	WasSpoken       bool   `json:"wasSpoken"`
+	TranscribeAS    string `json:"transcribe_as"`
 	RegionalVariant string `json:"regionalVariant"`
 }
 
 type Params struct {
-	Texts     []Text `json:"texts"`
-	Splitting string `json:"splitting"`
-	Lang      Lang   `json:"lang"`
-	Timestamp int64  `json:"timestamp"`
-	// CommonJobParams CommonJobParams `json:"commonJobParams"`
+	Texts           []Text          `json:"texts"`
+	Splitting       string          `json:"splitting"`
+	Lang            Lang            `json:"lang"`
+	Timestamp       int64           `json:"timestamp"`
+	CommonJobParams CommonJobParams `json:"commonJobParams"`
 }
 
 type Text struct {
@@ -54,6 +56,11 @@ func init_data(source_lang string, target_lang string) *PostData {
 				SourceLangUserSelected: source_lang,
 				TargetLang:             target_lang,
 			},
+			CommonJobParams: CommonJobParams{
+				WasSpoken:       false,
+				TranscribeAS:    "",
+				RegionalVariant: "en-US",
+			},
 		},
 	}
 }
@@ -64,7 +71,7 @@ func get_i_count(translate_text string) int64 {
 
 func getRandomNumber() int64 {
 	rand.Seed(time.Now().Unix())
-	num := rand.Int63n(99999) + 100000
+	num := rand.Int63n(99999) + 8300000
 	return num * 1000
 }
 
@@ -85,12 +92,18 @@ type ResData struct {
 }
 
 func main() {
+	// display information
+	fmt.Println("DeepL X has been successfully launched! Listening on 0.0.0.0:1188")
+	fmt.Println("Made by sjlleo and missuo.")
+
 	// create a random id
 	id := getRandomNumber()
-	r := gin.Default()
-	// r.SetTrustedProxies([]string{"192.168.36.153"})
-	r.GET("/", func(c *gin.Context) {
 
+	// set release mode
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.Default()
+
+	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"code": 200,
 			"msg":  "DeepL API, Made by sjlleo and missuo. Go to /translate with POST.",
@@ -101,10 +114,8 @@ func main() {
 	r.POST("/translate", func(c *gin.Context) {
 		reqj := ResData{}
 		c.BindJSON(&reqj)
-		// fmt.Printf("%v", &reqj)
 		source_lang := reqj.Source_Lang
 		target_lang := reqj.Target_Lang
-		// fmt.Println(reqj)
 		if source_lang == "" {
 			source_lang = "ZH"
 		}
@@ -114,27 +125,20 @@ func main() {
 		translate_text := reqj.Trans_Text
 		// fmt.Printf("%v", translate_text)
 		if translate_text != "" {
-
 			url := "https://www2.deepl.com/jsonrpc"
-
 			id = id + 1
-
 			post_data := init_data(source_lang, target_lang)
-
 			text := Text{
 				Text:                translate_text,
-				RequestAlternatives: 3,
+				RequestAlternatives: 0,
 			}
-
 			// set id
 			post_data.ID = id
 			// set text
 			post_data.Params.Texts = append(post_data.Params.Texts, text)
 			// set timestamp
 			post_data.Params.Timestamp = getTimeStamp(get_i_count(translate_text))
-
 			post_byte, _ := json.Marshal(post_data)
-
 			post_str := string(post_byte)
 
 			// add space if necessary
@@ -145,7 +149,6 @@ func main() {
 			}
 
 			post_byte = []byte(post_str)
-
 			reader := bytes.NewReader(post_byte)
 			request, err := http.NewRequest("POST", url, reader)
 			if err != nil {
@@ -153,46 +156,58 @@ func main() {
 				return
 			}
 
+			// Set Headers
 			request.Header.Set("Content-Type", "application/json")
+			request.Header.Set("Accept", "*/*")
+			request.Header.Set("x-app-os-name", "iOS")
+			request.Header.Set("x-app-os-version", "16.3.0")
+			request.Header.Set("Accept-Language", "en-US,en;q=0.9")
+			request.Header.Set("Accept-Encoding", "gzip, deflate, br")
+			request.Header.Set("x-app-device", "iPhone13,2")
+			request.Header.Set("User-Agent", "DeepL-iOS/2.6.0 iOS 16.3.0 (iPhone13,2)")
+			request.Header.Set("x-app-build", "353933")
+			request.Header.Set("x-app-version", "2.6")
+			request.Header.Set("Connection", "keep-alive")
+
 			client := &http.Client{}
 			resp, err := client.Do(request)
 			if err != nil {
 				log.Println(err)
 				return
 			}
-
 			defer resp.Body.Close()
 			body, _ := io.ReadAll(resp.Body)
 			res := gjson.ParseBytes(body)
-			// fmt.Println(res)
-			// fmt.Println(res.Get("result").Bool())
+			// display response
+			fmt.Println(res)
 			if res.Get("error.code").String() == "-32600" {
 				log.Println(res.Get("error").String())
 				c.JSON(406, gin.H{
 					"code": 406,
-					"msg":  "target_lang is not supported",
+					"msg":  "Invalid target_lang",
 				})
 				return
 			} else {
-				c.JSON(200, gin.H{
-					"code": 200,
-					"id":   id,
-					"data": res.Get("result.texts.0.text").String(),
-				})
+				if resp.StatusCode == 429 {
+					c.JSON(429, gin.H{
+						"code":    429,
+						"message": "Too Many Requests",
+					})
+				} else {
+					c.JSON(200, gin.H{
+						"code": 200,
+						"id":   id,
+						"data": res.Get("result.texts.0.text").String(),
+					})
+				}
 			}
-
-			// data = res.Get("result.texts.0.text").String()
-			// if res.Get("result.lang_is_confident").String() == "false" {
-
-			// fmt.Printf(res.Get("result.texts.0.text").String())
-
 		} else {
 			c.JSON(404, gin.H{
-				"code": 404,
-				"msg":  "no text found",
+				"code":    404,
+				"message": "No Text Found",
 			})
 		}
 	})
-	r.Run(":1199") // listen and serve on 0.0.0.0:1199
+	r.Run(":1188") // listen and serve on 0.0.0.0:1188
 
 }
