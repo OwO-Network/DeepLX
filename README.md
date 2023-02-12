@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-02-12 10:03:26
+ * @LastEditTime: 2023-02-12 10:06:37
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -30,11 +30,6 @@ Permanently free DeepL API written in Golang
   "data": "Hello world",
   "id": 8305092005
 }
-```
-### Run on Server
-```bash
-bash <(curl -Ls https://cpp.li/deeplx)
-
 ```
 
 ### Run on Mac
