@@ -8,7 +8,7 @@
  * 
  * Copyright © 2022 by Vincent, All Rights Reserved. 
 -->
-# DeepLX
+# DeepL X
 Permanently free DeepL API written in Golang
 
 ## Description
@@ -38,7 +38,7 @@ bash <(curl -Ls https://cpp.li/deeplx)
 ```
 
 ### Run on Mac
-1. Download  the latest release of DeepLX.
+1. Download  the latest release of DeepL X.
 ```bash
 sudo mv deeplx_darwin_amd64 /usr/local/bin/deeplx
 ```
