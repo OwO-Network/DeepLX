@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-02-12 10:06:37
+ * @LastEditTime: 2023-02-18 19:46:10
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -40,12 +40,12 @@ sudo mv deeplx_darwin_amd64 /usr/local/bin/deeplx
 
 2. Download the `me.missuo.deeplx.plist` to `/Users/YOUR_USERNAME/Library/LaunchAgents`.
 ```bash
-wget https://raw.githubusercontent.com/OwO-Network/DeepLX/main/me.missuo.deeplx.plist -O /Users/YOUR_USERNAME/Library/LaunchAgents/me.missuo.deeplx.plist
+wget https://raw.githubusercontent.com/OwO-Network/DeepLX/main/me.missuo.deeplx.plist -O ~/Library/LaunchAgents/me.missuo.deeplx.plist
 ```
 3. Run following command.
 ```bash
-launchctl load /Library/LaunchAgents/me.missuo.deeplx.plist
-launchctl start /Library/LaunchAgents/me.missuo.deeplx.plist
+launchctl load ~/Library/LaunchAgents/me.missuo.deeplx.plist
+launchctl start ~/Library/LaunchAgents/me.missuo.deeplx.plist
 ```
 
 ## Setup on [Bob App](https://bobtranslate.com/)
