@@ -13,7 +13,7 @@ jobs:
 
       - uses: actions/setup-go@v2
         with:
-          go-version: "1.18"
+          go-version: "1.19"
 
       - run: bash .cross_compile.sh
 
@@ -22,18 +22,6 @@ jobs:
         with:
           draft: false
           files: |
-            dist/deeplx_darwin_amd64
-            dist/deeplx_darwin_arm64
-            dist/deeplx_linux_386
-            dist/deeplx_linux_amd64
-            dist/deeplx_linux_arm64
-            dist/deeplx_linux_armv7
-            dist/deeplx_linux_mips
-            dist/deeplx_openbsd_amd64
-            dist/deeplx_openbsd_arm64
-            dist/deeplx_freebsd_amd64
-            dist/deeplx_freebsd_arm64
-            dist/deeplx_windows_amd64.exe
-            dist/deeplx_windows_386.exe
+            dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GT_Token }}
