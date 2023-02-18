@@ -57,11 +57,11 @@ launchctl start ~/Library/LaunchAgents/me.missuo.deeplx.plist
 1. Install [bob-plugin-deeplx](https://github.com/clubxdev/bob-plugin-deeplx) on Bob.
 
 2. Setup the API.
-![9a75c26ad6e8bd9b7582c](https://telegraph.eowo.us/file/9a75c26ad6e8bd9b7582c.png)
+![c5c19dd89df6fae1a256d](https://missuo.ru/file/c5c19dd89df6fae1a256d.png)
 
 ## Docker Backup for zu1k
 ```shell
-docker run -itd -p 7373:80 missuo/deeplx-bk
+docker run -itd -p 1188:80 missuo/deeplx-bk
 ```
 ## Author
 **DeepL X** © [Vincent Young](https://github.com/missuo) & [Leo Shen](https://github.com/sjlleo), Released under the [MIT](./LICENSE) License.<br>
