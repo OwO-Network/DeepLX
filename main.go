@@ -21,9 +21,9 @@ type Lang struct {
 }
 
 type CommonJobParams struct {
-	WasSpoken       bool   `json:"wasSpoken"`
-	TranscribeAS    string `json:"transcribe_as"`
-	RegionalVariant string `json:"regionalVariant"`
+	WasSpoken    bool   `json:"wasSpoken"`
+	TranscribeAS string `json:"transcribe_as"`
+	// RegionalVariant string `json:"regionalVariant"`
 }
 
 type Params struct {
@@ -57,9 +57,9 @@ func init_data(source_lang string, target_lang string) *PostData {
 				TargetLang:             target_lang,
 			},
 			CommonJobParams: CommonJobParams{
-				WasSpoken:       false,
-				TranscribeAS:    "",
-				RegionalVariant: "en-US",
+				WasSpoken:    false,
+				TranscribeAS: "",
+				// RegionalVariant: "en-US",
 			},
 		},
 	}
@@ -131,7 +131,7 @@ func main() {
 			post_data := init_data(source_lang, target_lang)
 			text := Text{
 				Text:                translate_text,
-				RequestAlternatives: 0,
+				RequestAlternatives: 3,
 			}
 			// set id
 			post_data.ID = id
