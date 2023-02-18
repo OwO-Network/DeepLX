@@ -22,6 +22,7 @@ install_deeplx(){
     wget -q -N --no-check-certificate -O /etc/systemd/system/deeplx.service https://raw.githubusercontent.com/OwO-Network/DeepLX/main/deeplx.service
     systemctl daemon-reload
     systemctl enable deeplx
+    systemctl start deeplx
     echo -e "Installed successfully, listening at 0.0.0.0:1188"
 }
 install_deeplx
