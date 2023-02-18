@@ -32,6 +32,11 @@ Permanently free DeepL API written in Golang
 }
 ```
 
+### Run on Linux Server
+```bash
+bash <(curl -Ls https://cpp.li/deeplx)
+```
+
 ### Run on Mac
 1. Download  the latest release of DeepL X.
 ```bash
