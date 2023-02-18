@@ -78,6 +78,7 @@ func getRandomNumber() int64 {
 func getTimeStamp(i_count int64) int64 {
 	ts := time.Now().UnixMilli()
 	if i_count != 0 {
+		i_count = i_count + 1
 		return ts - ts%i_count + i_count
 	} else {
 		return ts
