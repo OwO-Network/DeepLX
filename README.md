@@ -41,6 +41,7 @@ bash <(curl -Ls https://cpp.li/deeplx)
 1. Download  the latest release of DeepL X.
 ```bash
 sudo mv deeplx_darwin_amd64 /usr/local/bin/deeplx
+sudo chmod +x /usr/local/bin/deeplx
 ```
 
 2. Download the `me.missuo.deeplx.plist` to `~/Library/LaunchAgents`.
