@@ -54,6 +54,18 @@ launchctl load ~/Library/LaunchAgents/me.missuo.deeplx.plist
 launchctl start ~/Library/LaunchAgents/me.missuo.deeplx.plist
 ```
 
+### Install from AUR
+
+```bash
+paru -S deeplx-bin
+```
+
+after install, run
+
+```bash
+systemctl daemon-reload
+systemctl enable deeplx
+```
 ## Setup on [Bob App](https://bobtranslate.com/)
 1. Install [bob-plugin-deeplx](https://github.com/clubxdev/bob-plugin-deeplx) on Bob.
 
