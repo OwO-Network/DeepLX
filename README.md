@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-02-18 19:46:10
+ * @LastEditTime: 2023-02-24 21:36:36
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -55,16 +55,16 @@ launchctl start ~/Library/LaunchAgents/me.missuo.deeplx.plist
 ```
 
 ### Install from AUR
-
 ```bash
 paru -S deeplx-bin
 ```
 
-after install, run
+After installation, start the daemon with the following command.
 
 ```bash
 systemctl daemon-reload
 systemctl enable deeplx
+
 ```
 ## Setup on [Bob App](https://bobtranslate.com/)
 1. Install [bob-plugin-deeplx](https://github.com/clubxdev/bob-plugin-deeplx) on Bob.
@@ -72,9 +72,11 @@ systemctl enable deeplx
 2. Setup the API.
 ![c5c19dd89df6fae1a256d](https://missuo.ru/file/c5c19dd89df6fae1a256d.png)
 
-## Docker Backup for zu1k
+## Backup the Docker Image of zu1k
 ```shell
 docker run -itd -p 1188:80 missuo/deeplx-bk
 ```
+**This docker image is not related to this project, as the original author deleted the image, it is only for backup.**
+
 ## Author
 **DeepL X** © [Vincent Young](https://github.com/missuo) & [Leo Shen](https://github.com/sjlleo), Released under the [MIT](./LICENSE) License.<br>

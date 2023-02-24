@@ -106,8 +106,8 @@ func main() {
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
-			"code": 200,
-			"msg":  "DeepL API, Made by sjlleo and missuo. Go to /translate with POST.",
+			"code":    200,
+			"message": "DeepL Free API, Made by sjlleo and missuo. Go to /translate with POST. http://github.com/OwO-Network/DeepLX",
 		})
 
 	})
@@ -180,7 +180,7 @@ func main() {
 			body, _ := io.ReadAll(resp.Body)
 			res := gjson.ParseBytes(body)
 			// display response
-			fmt.Println(res)
+			// fmt.Println(res)
 			if res.Get("error.code").String() == "-32600" {
 				log.Println(res.Get("error").String())
 				c.JSON(406, gin.H{
