@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-02-24 21:36:36
+ * @LastEditTime: 2023-02-25 22:26:19
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -79,4 +79,4 @@ docker run -itd -p 1188:80 missuo/deeplx-bk
 **This docker image is not related to this project, as the original author deleted the image, it is only for backup.**
 
 ## Author
-**DeepL X** © [Vincent Young](https://github.com/missuo) & [Leo Shen](https://github.com/sjlleo), Released under the [MIT](./LICENSE) License.<br>
+**DeepL X** © [DeepL X Contributors](https://github.com/OwO-Network/DeepLX/graphs/contributors), Released under the [MIT](./LICENSE) License.<br>
