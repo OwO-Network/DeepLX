@@ -15,6 +15,10 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+func init() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+}
+
 type Lang struct {
 	SourceLangUserSelected string `json:"source_lang_user_selected"`
 	TargetLang             string `json:"target_lang"`
@@ -46,15 +50,15 @@ type PostData struct {
 	Params  Params `json:"params"`
 }
 
-func init_data(source_lang string, target_lang string) *PostData {
+func initData(sourceLang string, targetLang string) *PostData {
 	return &PostData{
 		Jsonrpc: "2.0",
 		Method:  "LMT_handle_texts",
 		Params: Params{
 			Splitting: "newlines",
 			Lang: Lang{
-				SourceLangUserSelected: source_lang,
-				TargetLang:             target_lang,
+				SourceLangUserSelected: sourceLang,
+				TargetLang:             targetLang,
 			},
 			CommonJobParams: CommonJobParams{
 				WasSpoken:    false,
@@ -65,8 +69,8 @@ func init_data(source_lang string, target_lang string) *PostData {
 	}
 }
 
-func get_i_count(translate_text string) int64 {
-	return int64(strings.Count(translate_text, "i"))
+func getICount(translateText string) int64 {
+	return int64(strings.Count(translateText, "i"))
 }
 
 func getRandomNumber() int64 {
@@ -75,21 +79,20 @@ func getRandomNumber() int64 {
 	return num * 1000
 }
 
-func getTimeStamp(i_count int64) int64 {
+func getTimeStamp(iCount int64) int64 {
 	ts := time.Now().UnixMilli()
-	if i_count != 0 {
-		i_count = i_count + 1
-		return ts - ts%i_count + i_count
+	if iCount != 0 {
+		iCount = iCount + 1
+		return ts - ts%iCount + iCount
 	} else {
 		return ts
 	}
-
 }
 
 type ResData struct {
-	Trans_Text  string `json:"text"`
-	Source_Lang string `json:"source_lang"`
-	Target_Lang string `json:"target_lang"`
+	TransText  string `json:"text"`
+	SourceLang string `json:"source_lang"`
+	TargetLang string `json:"target_lang"`
 }
 
 func main() {
@@ -115,41 +118,47 @@ func main() {
 	r.POST("/translate", func(c *gin.Context) {
 		reqj := ResData{}
 		c.BindJSON(&reqj)
-		source_lang := reqj.Source_Lang
-		target_lang := reqj.Target_Lang
-		if source_lang == "" {
-			source_lang = "ZH"
+
+		sourceLang := reqj.SourceLang
+		targetLang := reqj.TargetLang
+		if sourceLang == "" {
+			sourceLang = "ZH"
 		}
-		if target_lang == "" {
-			target_lang = "EN"
+		if targetLang == "" {
+			targetLang = "EN"
 		}
-		translate_text := reqj.Trans_Text
-		// fmt.Printf("%v", translate_text)
-		if translate_text != "" {
+		translateText := reqj.TransText
+		// fmt.Printf("%v", translateText)
+		if translateText == "" {
+			c.JSON(http.StatusNotFound, gin.H{
+				"code":    http.StatusNotFound,
+				"message": "No Translate Text Found",
+			})
+		} else {
 			url := "https://www2.deepl.com/jsonrpc"
 			id = id + 1
-			post_data := init_data(source_lang, target_lang)
+			postData := initData(sourceLang, targetLang)
 			text := Text{
-				Text:                translate_text,
+				Text:                translateText,
 				RequestAlternatives: 3,
 			}
 			// set id
-			post_data.ID = id
+			postData.ID = id
 			// set text
-			post_data.Params.Texts = append(post_data.Params.Texts, text)
+			postData.Params.Texts = append(postData.Params.Texts, text)
 			// set timestamp
-			post_data.Params.Timestamp = getTimeStamp(get_i_count(translate_text))
-			post_byte, _ := json.Marshal(post_data)
-			post_str := string(post_byte)
+			postData.Params.Timestamp = getTimeStamp(getICount(translateText))
+			post_byte, _ := json.Marshal(postData)
+			postStr := string(post_byte)
 
 			// add space if necessary
 			if (id+5)%29 == 0 || (id+3)%13 == 0 {
-				post_str = strings.Replace(post_str, "\"method\":\"", "\"method\" : \"", -1)
+				postStr = strings.Replace(postStr, "\"method\":\"", "\"method\" : \"", -1)
 			} else {
-				post_str = strings.Replace(post_str, "\"method\":\"", "\"method\": \"", -1)
+				postStr = strings.Replace(postStr, "\"method\":\"", "\"method\": \"", -1)
 			}
 
-			post_byte = []byte(post_str)
+			post_byte = []byte(postStr)
 			reader := bytes.NewReader(post_byte)
 			request, err := http.NewRequest("POST", url, reader)
 			if err != nil {
@@ -177,38 +186,33 @@ func main() {
 				return
 			}
 			defer resp.Body.Close()
+
 			body, _ := io.ReadAll(resp.Body)
 			res := gjson.ParseBytes(body)
 			// display response
 			// fmt.Println(res)
 			if res.Get("error.code").String() == "-32600" {
 				log.Println(res.Get("error").String())
-				c.JSON(406, gin.H{
-					"code": 406,
-					"msg":  "Invalid target_lang",
+				c.JSON(http.StatusNotAcceptable, gin.H{
+					"code": http.StatusNotAcceptable,
+					"msg":  "Invalid targetLang",
 				})
 				return
-			} else {
-				if resp.StatusCode == 429 {
-					c.JSON(429, gin.H{
-						"code":    429,
-						"message": "Too Many Requests",
-					})
-				} else {
-					c.JSON(200, gin.H{
-						"code": 200,
-						"id":   id,
-						"data": res.Get("result.texts.0.text").String(),
-					})
-				}
 			}
-		} else {
-			c.JSON(404, gin.H{
-				"code":    404,
-				"message": "No Text Found",
-			})
+
+			if resp.StatusCode == http.StatusTooManyRequests {
+				c.JSON(http.StatusTooManyRequests, gin.H{
+					"code":    http.StatusTooManyRequests,
+					"message": "Too Many Requests",
+				})
+			} else {
+				c.JSON(http.StatusOK, gin.H{
+					"code": http.StatusOK,
+					"id":   id,
+					"data": res.Get("result.texts.0.text").String(),
+				})
+			}
 		}
 	})
 	r.Run(":1188") // listen and serve on 0.0.0.0:1188
-
 }
