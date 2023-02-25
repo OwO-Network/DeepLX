@@ -194,8 +194,8 @@ func main() {
 			if res.Get("error.code").String() == "-32600" {
 				log.Println(res.Get("error").String())
 				c.JSON(http.StatusNotAcceptable, gin.H{
-					"code": http.StatusNotAcceptable,
-					"msg":  "Invalid targetLang",
+					"code":    http.StatusNotAcceptable,
+					"message": "Invalid targetLang",
 				})
 				return
 			}
