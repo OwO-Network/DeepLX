@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-02-25 22:26:19
+ * @LastEditTime: 2023-02-28 18:14:40
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -71,6 +71,14 @@ systemctl enable deeplx
 
 2. Setup the API.
 ![c5c19dd89df6fae1a256d](https://missuo.ru/file/c5c19dd89df6fae1a256d.png)
+
+## Setup on [immersive-translate](https://github.com/immersive-translate/immersive-translate)
+1. Install Latest [immersive-translate ](https://github.com/immersive-translate/immersive-translate/releases) on your browser.
+
+2. Click on **Developer Settings** in the bottom left corner. **Enable Beta experimental features**.
+
+3. Set the URL.
+![0779ecf8c7d7d1bee532b](https://missuo.ru/file/0779ecf8c7d7d1bee532b.png)
 
 ## Backup the Docker Image of zu1k
 ```shell
