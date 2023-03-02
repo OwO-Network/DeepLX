@@ -43,7 +43,6 @@ bash <(curl -Ls https://cpp.li/deeplx)
 brew tap owo-network/brew
 brew install deeplx
 brew services start owo-network/brew/deeplx
-brew services enable owo-network/brew/deeplx
 ```
 
 #### Manual
