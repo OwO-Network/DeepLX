@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-02-28 18:14:40
+ * @LastEditTime: 2023-03-03 02:26:21
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -43,7 +43,13 @@ bash <(curl -Ls https://cpp.li/deeplx)
 brew tap owo-network/brew
 brew install deeplx
 brew services start owo-network/brew/deeplx
+
+# Update to latest version
+brew update
+brew upgrade deeplx
+brew services restart owo-network/brew/deeplx
 ```
+
 
 #### Manual
 1. Download  the latest release of DeepL X.
