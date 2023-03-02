@@ -38,7 +38,7 @@ bash <(curl -Ls https://cpp.li/deeplx)
 ```
 
 ### Run on Mac
-#### Homebrew
+#### Homebrew (Recommended)
 ```bash
 brew tap owo-network/brew
 brew install deeplx
