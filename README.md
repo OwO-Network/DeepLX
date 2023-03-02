@@ -38,6 +38,14 @@ bash <(curl -Ls https://cpp.li/deeplx)
 ```
 
 ### Run on Mac
+#### Homebrew
+```bash
+brew tap owo-network/brew
+brew install deeplx
+brew services start owo-network/brew/deeplx
+```
+
+#### Manual
 1. Download  the latest release of DeepL X.
 ```bash
 sudo mv deeplx_darwin_amd64 /usr/local/bin/deeplx
