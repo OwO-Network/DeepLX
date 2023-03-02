@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/abadojack/whatlanggo"
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
 )
@@ -121,14 +122,15 @@ func main() {
 
 		sourceLang := reqj.SourceLang
 		targetLang := reqj.TargetLang
+		translateText := reqj.TransText
 		if sourceLang == "" {
-			sourceLang = "ZH"
+			lang := whatlanggo.DetectLang(translateText)
+			deepLLang := strings.ToUpper(lang.Iso6391())
+			sourceLang = deepLLang
 		}
 		if targetLang == "" {
 			targetLang = "EN"
 		}
-		translateText := reqj.TransText
-		// fmt.Printf("%v", translateText)
 		if translateText == "" {
 			c.JSON(http.StatusNotFound, gin.H{
 				"code":    http.StatusNotFound,
