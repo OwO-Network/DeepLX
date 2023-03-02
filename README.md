@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-03-03 02:26:21
+ * @LastEditTime: 2023-03-03 02:30:52
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -48,6 +48,9 @@ brew services start owo-network/brew/deeplx
 brew update
 brew upgrade deeplx
 brew services restart owo-network/brew/deeplx
+
+# View the currently installed version
+brew list --versions deeplx
 ```
 
 
