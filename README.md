@@ -44,7 +44,7 @@ brew tap owo-network/brew
 brew install deeplx
 brew services start owo-network/brew/deeplx
 
-# Update to latest version
+# Update to the latest version
 brew update
 brew upgrade deeplx
 brew services restart owo-network/brew/deeplx
