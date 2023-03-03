@@ -115,6 +115,7 @@ func (config *Config) readConfig() {
 
 	if err != nil {
 		log.Printf("Unable to resolve %v, please give the correct port", DEEPLXPORT)
+		return
 	}
 
 	config.Port = uint16(port)
