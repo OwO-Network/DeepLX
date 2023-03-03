@@ -3,13 +3,12 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
 	"math/rand"
 	"net/http"
-	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -18,7 +17,17 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+var port int
+
 func init() {
+	const (
+		defaultPort = 1188
+		usage       = "set up the port to listen on"
+	)
+
+	flag.IntVar(&port, "port", defaultPort, usage)
+	flag.IntVar(&port, "p", defaultPort, usage)
+
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
 
@@ -92,35 +101,6 @@ func getTimeStamp(iCount int64) int64 {
 	}
 }
 
-const (
-	DEEPLXPORT = "DEEPLX_PORT"
-)
-
-type Config struct {
-	Port uint16
-}
-
-var DefaultConfig = Config{
-	Port: 1188,
-}
-
-func (config *Config) readConfig() {
-	portStr := os.Getenv(DEEPLXPORT)
-
-	if portStr == "" {
-		return
-	}
-
-	port, err := strconv.ParseUint(portStr, 10, 32)
-
-	if err != nil {
-		log.Printf("Unable to resolve %v, please give the correct port", DEEPLXPORT)
-		return
-	}
-
-	config.Port = uint16(port)
-}
-
 type ResData struct {
 	TransText  string `json:"text"`
 	SourceLang string `json:"source_lang"`
@@ -128,11 +108,8 @@ type ResData struct {
 }
 
 func main() {
-	// read user config
-	config := DefaultConfig
-	config.readConfig()
-
-	port := config.Port
+	// parse flags
+	flag.Parse()
 
 	// display information
 	fmt.Printf("DeepL X has been successfully launched! Listening on 0.0.0.0:%v\n", port)

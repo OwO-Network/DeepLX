@@ -85,9 +85,11 @@ systemctl enable deeplx
 
 ### Configuration
 
-You can change the default configuration by setting environment variables, such as setting the port:
+You can change the default configuration in command line, such as setting the port:
 ```bash
-env DEEPLX_PORT=27001 deeplx_linux_amd64
+deeplx_linux_amd64 --port 27001
+#or shorthand
+deeplx_linux_amd64 -p 27001
 ```
 
 ## Setup on [Bob App](https://bobtranslate.com/)
