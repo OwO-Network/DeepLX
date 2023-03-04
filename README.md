@@ -95,6 +95,7 @@ systemctl enable deeplx
 2. Click on **Developer Settings** in the bottom left corner. **Enable Beta experimental features**.
 
 3. Set the URL.
+
 ![0779ecf8c7d7d1bee532b](https://missuo.ru/file/0779ecf8c7d7d1bee532b.png)
 
 ## Backup the Docker Image of zu1k
