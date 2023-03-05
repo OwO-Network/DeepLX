@@ -84,7 +84,7 @@ systemctl enable deeplx
 
 ```
 ## Setup on [Bob App](https://bobtranslate.com/)
-1. Install [bob-plugin-deeplx](https://github.com/clubxdev/bob-plugin-deeplx) on Bob.
+1. Install [bob-plugin-deeplx](https://github.com/missuo/bob-plugin-deeplx) on Bob.
 
 2. Setup the API.
 ![c5c19dd89df6fae1a256d](https://missuo.ru/file/c5c19dd89df6fae1a256d.png)
