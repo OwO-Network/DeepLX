@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-03-07 03:05:00
+ * @LastEditTime: 2023-03-07 03:11:57
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -39,6 +39,14 @@ docker run -itd -p 1188:1188 ghcr.io/owo-network/deeplx:latest
 
 # dockerhub
 docker run -itd -p 1188:1188 missuo/deeplx:latest
+```
+
+### Run with Docker Compose
+```bash
+mkdir deeplx
+cd deeplx
+wget https://raw.githubusercontent.com/OwO-Network/DeepLX/main/docker-compose.yaml
+docker-compose up -d
 ```
 
 ### Run on Linux Server
