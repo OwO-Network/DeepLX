@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-03-07 04:40:19
+ * @LastEditTime: 2023-03-07 04:57:32
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -106,6 +106,8 @@ systemctl enable deeplx
 ![c5c19dd89df6fae1a256d](https://missuo.ru/file/c5c19dd89df6fae1a256d.png)
 
 ## Setup on [immersive-translate](https://github.com/immersive-translate/immersive-translate)
+**It is not recommended, because the `immersive-translate` will send many requests in a short time, which will cause the `DeepL API` to block your IP.**
+
 1. Install Latest [immersive-translate ](https://github.com/immersive-translate/immersive-translate/releases) on your browser.
 
 2. Click on **Developer Settings** in the bottom left corner. **Enable Beta experimental features**.
