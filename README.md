@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-03-07 04:09:31
+ * @LastEditTime: 2023-03-07 04:40:19
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -110,9 +110,9 @@ systemctl enable deeplx
 
 2. Click on **Developer Settings** in the bottom left corner. **Enable Beta experimental features**.
 
-3. Set the URL.
+3. Set the URL. (If you are not deploying locally, you need to change 127.0.0.1 to the IP of your server)
 
-![0779ecf8c7d7d1bee532b](https://missuo.ru/file/0779ecf8c7d7d1bee532b.png)
+![6a48ba28621f2465028f0](https://missuo.ru/file/6a48ba28621f2465028f0.png)
 
 ## Backup the Docker Image of zu1k
 ```shell
