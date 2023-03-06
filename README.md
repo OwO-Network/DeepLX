@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-03-07 03:11:57
+ * @LastEditTime: 2023-03-07 04:09:31
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -70,7 +70,6 @@ brew services restart owo-network/brew/deeplx
 brew list --versions deeplx
 ```
 
-
 #### Manual
 1. Download  the latest release of DeepL X.
 ```bash
@@ -103,7 +102,7 @@ systemctl enable deeplx
 ## Setup on [Bob App](https://bobtranslate.com/)
 1. Install [bob-plugin-deeplx](https://github.com/missuo/bob-plugin-deeplx) on Bob.
 
-2. Setup the API.
+2. Setup the API. (If you use Brew to install locally you can skip this step)
 ![c5c19dd89df6fae1a256d](https://missuo.ru/file/c5c19dd89df6fae1a256d.png)
 
 ## Setup on [immersive-translate](https://github.com/immersive-translate/immersive-translate)
