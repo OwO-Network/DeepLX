@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/abadojack/whatlanggo v1.0.1
+	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.8.1
 	github.com/tidwall/gjson v1.14.3
 )

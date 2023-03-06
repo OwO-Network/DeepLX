@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/abadojack/whatlanggo"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
 )
@@ -107,6 +108,7 @@ func main() {
 	// set release mode
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
+	r.Use(cors.Default())
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
