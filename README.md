@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-03-03 02:30:52
+ * @LastEditTime: 2023-03-07 03:05:00
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -34,7 +34,11 @@ Permanently free DeepL API written in Golang
 
 ### Run with Docker
 ```bash
+# ghcr.io
 docker run -itd -p 1188:1188 ghcr.io/owo-network/deeplx:latest
+
+# dockerhub
+docker run -itd -p 1188:1188 missuo/deeplx:latest
 ```
 
 ### Run on Linux Server
