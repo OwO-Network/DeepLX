@@ -34,7 +34,7 @@ Permanently free DeepL API written in Golang
 
 ### Run with Docker
 ```bash
-docker run -itd -p 1199:1188 ghcr.io/owo-network/deeplx:latest
+docker run -itd -p 1188:1188 ghcr.io/owo-network/deeplx:latest
 ```
 
 ### Run on Linux Server
