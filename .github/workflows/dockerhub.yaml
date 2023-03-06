@@ -10,7 +10,7 @@ env:
   # Use docker.io for Docker Hub if empty
   REGISTRY: docker.io
   # github.repository as <account>/<repo>
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: missuo/deeplx
 
 jobs:
 
@@ -34,7 +34,7 @@ jobs:
         with:
           version: latest
 
-      - name: Login to GHCR
+      - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
           registry: docker.io
