@@ -193,6 +193,7 @@ func main() {
 
 			body, _ := io.ReadAll(resp.Body)
 			res := gjson.ParseBytes(body)
+
 			// display response
 			// fmt.Println(res)
 			if res.Get("error.code").String() == "-32600" {
@@ -210,10 +211,16 @@ func main() {
 					"message": "Too Many Requests",
 				})
 			} else {
+				var alternatives []string
+				res.Get("result.texts.0.alternatives").ForEach(func(key, value gjson.Result) bool {
+					alternatives = append(alternatives, value.Get("text").String())
+					return true
+				})
 				c.JSON(http.StatusOK, gin.H{
-					"code": http.StatusOK,
-					"id":   id,
-					"data": res.Get("result.texts.0.text").String(),
+					"code":         http.StatusOK,
+					"id":           id,
+					"data":         res.Get("result.texts.0.text").String(),
+					"alternatives": alternatives,
 				})
 			}
 		}
