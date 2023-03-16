@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-03-07 04:57:32
+ * @LastEditTime: 2023-03-16 20:24:59
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -26,9 +26,14 @@ Permanently free DeepL API written in Golang
 ### Response
 ```json
 {
+  "alternatives": [
+    "Undisputed",
+    "Unquestionable",
+    "Unquestionably"
+  ],
   "code": 200,
-  "data": "Hello world",
-  "id": 8305092005
+  "data": "Undoubtedly",
+  "id": 8300079001
 }
 ```
 
