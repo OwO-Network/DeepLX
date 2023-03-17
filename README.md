@@ -51,8 +51,10 @@ docker run -itd -p 1188:1188 missuo/deeplx:latest
 mkdir deeplx
 cd deeplx
 wget https://raw.githubusercontent.com/OwO-Network/DeepLX/main/docker-compose.yaml
-#docker-compose up -d #docker compose v1
-docker compose up -d #docker compose v2
+# docker compose v1
+docker-compose up -d
+# or docker compose v2
+docker compose up -d
 ```
 
 ### Run on Linux Server
