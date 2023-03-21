@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-03-16 20:24:59
+ * @LastEditTime: 2023-03-21 16:55:40
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -123,6 +123,23 @@ systemctl enable deeplx
 3. Set the URL. (If you are not deploying locally, you need to change 127.0.0.1 to the IP of your server)
 
 ![6a48ba28621f2465028f0](https://missuo.ru/file/6a48ba28621f2465028f0.png)
+
+## Use in Python
+```python
+import httpx, json
+
+deeplx_api = "http://127.0.0.1:1188/translate"
+
+data = {
+	"text": "Hello World",
+	"source_lang": "EN",
+	"target_lang": "ZH"
+}
+
+post_data = json.dumps(data)
+r = httpx.post(url = deeplx_api, data = post_data).text
+print(r)
+```
 
 ## Backup the Docker Image of zu1k
 ```shell
