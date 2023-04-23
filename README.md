@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-04-23 13:25:08
+ * @LastEditTime: 2023-04-23 13:49:08
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -70,6 +70,7 @@ bash <(curl -Ls https://cpp.li/deeplx)
 
 ### Run on Mac
 #### Homebrew (Recommended)
+**For unknown reasons v0.7.8 does not work properly with Homebrew, so we are still using v0.7.7 for our version of Homebrew, it has no bugs and it is almost perfect.**
 ```bash
 brew tap owo-network/brew
 brew install deeplx
