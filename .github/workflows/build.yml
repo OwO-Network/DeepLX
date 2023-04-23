@@ -25,5 +25,3 @@ jobs:
           draft: false
           files: |
             dist/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GT_Token }}
