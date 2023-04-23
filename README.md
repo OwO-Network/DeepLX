@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-03-21 16:55:40
+ * @LastEditTime: 2023-04-23 13:25:08
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -12,10 +12,9 @@
 Permanently free DeepL API written in Golang
 
 ## Description
-- `deeplx` in only run in port `1188`, later versions will do the specified port.
-- `deeplx` is listening to `0.0.0.0:1188` by default.
-- `deeplx` is using `DeepL` Free API.
-- `deeplx` is unlimited to the number of requests.
+- `DeepLX` is listening to `0.0.0.0:1188` by default. You can modify the listening port by yourself.
+- `DeepLX` is using `DeepL` Free API.
+- `DeepLX` is unlimited to the number of requests.
 
 ## Usage
 ### Request Parameters
@@ -35,6 +34,13 @@ Permanently free DeepL API written in Golang
   "data": "Undoubtedly",
   "id": 8300079001
 }
+```
+### Specify the port
+**Thanks to [cijiugechu](https://github.com/cijiugechu) for [his contribution](https://github.com/OwO-Network/DeepLX/commit/4a0920579ea868b0f05ccdff6bceae316bfd5dc8) to make this feature possible for this project!**
+```bash
+./deeplx -p 3333
+# or
+./deeplx -port 3333
 ```
 
 ### Run with Docker

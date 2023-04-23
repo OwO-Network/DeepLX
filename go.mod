@@ -1,4 +1,4 @@
-module github.com/OwO-Network/deepl-api
+module github.com/OwO-Network/DeepLX
 
 go 1.19
 
