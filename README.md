@@ -11,6 +11,8 @@
 # DeepL X
 Permanently free DeepL API written in Golang
 
+**Added Python Package: [OwO-Network/PyDeepLX](https://github.com/OwO-Network/PyDeepLX)**
+
 ## Description
 - `DeepLX` is listening to `0.0.0.0:1188` by default. You can modify the listening port by yourself.
 - `DeepLX` is using `DeepL` Free API.
