@@ -9,7 +9,8 @@ on:
 
 env:
   # github.repository as <account>/<repo>
-  IMAGE_NAME: missuo/deeplx
+  DOCKER_IMAGE_NAME: missuo/deeplx
+  GHCR_IMAGE_NAME: ${{ github.repository }}
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
   DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
   GHCR_TOKEN: ${{ secrets.GT_Token }}
@@ -56,8 +57,8 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            docker.io/${{ env.IMAGE_NAME }}
-            ghcr.io/${{ env.IMAGE_NAME }}
+            docker.io/${{ env.DOCKER_IMAGE_NAME }}
+            ghcr.io/${{ env.GHCR_IMAGE_NAME }}
           # generate Docker tags based on the following events/attributes
           tags: |
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') }}
