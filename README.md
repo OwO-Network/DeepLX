@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-04-23 13:49:08
+ * @LastEditTime: 2023-05-30 01:27:34
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -67,6 +67,8 @@ docker compose up -d
 
 ### Run on Linux Server
 ```bash
+bash <(curl -Ls https://raw.githubusercontent.com/OwO-Network/DeepLX/main/install.sh)
+# or
 bash <(curl -Ls https://cpp.li/deeplx)
 ```
 
