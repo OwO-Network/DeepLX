@@ -8,8 +8,21 @@
  * 
  * Copyright © 2022 by Vincent, All Rights Reserved. 
 -->
-# DeepL X
-Permanently free DeepL API written in Golang
+<h1 align="center">
+  <br>DeepL X<br>
+</h1>
+<h4 align="center">Permanently free DeepL API written in Golang.</h4>
+<p align="center">
+  <a href="https://github.com/OwO-Network/DeepLX/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/OwO-Network/DeepLX/build.yml?branch=main&style=flat-square" alt="Github Actions">
+  </a>
+  <a href="https://goreportcard.com/report/github.com/OwO-Network/DeepLX">
+    <img src="https://goreportcard.com/badge/github.com/OwO-Network/DeepLX?style=flat-square">
+  </a>
+  <a href="https://github.com/OwO-Network/DeepLX/releases">
+    <img src="https://img.shields.io/github/release/OwO-Network/DeepLX/all.svg?style=flat-square">
+  </a>
+</p>
 
 ## **Python Package**
 [OwO-Network/PyDeepLX](https://github.com/OwO-Network/PyDeepLX)
