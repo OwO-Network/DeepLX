@@ -9,6 +9,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -130,7 +131,6 @@ func main() {
 			"code":    200,
 			"message": "DeepL Free API, Made by sjlleo and missuo. Go to /translate with POST. http://github.com/OwO-Network/DeepLX",
 		})
-
 	})
 
 	r.POST("/translate", func(c *gin.Context) {
@@ -250,6 +250,13 @@ func main() {
 			}
 		}
 	})
-	// by default, listen and serve on 0.0.0.0:1188
-	r.Run(fmt.Sprintf(":%v", port))
+
+	envPort, ok := os.LookupEnv("PORT")
+	if ok {
+		r.Run(":" + envPort)
+	} else {
+		// by default, listen and serve on 0.0.0.0:1188
+		r.Run(fmt.Sprintf(":%v", port))
+	}
+
 }
