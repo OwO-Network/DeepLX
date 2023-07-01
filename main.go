@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -13,12 +14,23 @@ import (
 	"time"
 
 	"github.com/abadojack/whatlanggo"
+	"github.com/andybalholm/brotli"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
 )
 
+var port int
+
 func init() {
+	const (
+		defaultPort = 1188
+		usage       = "set up the port to listen on"
+	)
+
+	flag.IntVar(&port, "port", defaultPort, usage)
+	flag.IntVar(&port, "p", defaultPort, usage)
+
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
 
@@ -99,8 +111,11 @@ type ResData struct {
 }
 
 func main() {
+	// parse flags
+	flag.Parse()
+
 	// display information
-	fmt.Println("DeepL X has been successfully launched! Listening on 0.0.0.0:1188")
+	fmt.Printf("DeepL X has been successfully launched! Listening on 0.0.0.0:%v\n", port)
 	fmt.Println("Made by sjlleo and missuo.")
 
 	// create a random id
@@ -178,9 +193,9 @@ func main() {
 			request.Header.Set("Accept-Language", "en-US,en;q=0.9")
 			request.Header.Set("Accept-Encoding", "gzip, deflate, br")
 			request.Header.Set("x-app-device", "iPhone13,2")
-			request.Header.Set("User-Agent", "DeepL-iOS/2.6.0 iOS 16.3.0 (iPhone13,2)")
-			request.Header.Set("x-app-build", "353933")
-			request.Header.Set("x-app-version", "2.6")
+			request.Header.Set("User-Agent", "DeepL-iOS/2.9.1 iOS 16.3.0 (iPhone13,2)")
+			request.Header.Set("x-app-build", "510265")
+			request.Header.Set("x-app-version", "2.9.1")
 			request.Header.Set("Connection", "keep-alive")
 
 			client := &http.Client{}
@@ -191,7 +206,17 @@ func main() {
 			}
 			defer resp.Body.Close()
 
-			body, _ := io.ReadAll(resp.Body)
+			var bodyReader io.Reader
+			switch resp.Header.Get("Content-Encoding") {
+			case "br":
+				bodyReader = brotli.NewReader(resp.Body)
+			default:
+				bodyReader = resp.Body
+			}
+
+			body, err := io.ReadAll(bodyReader)
+
+			// body, _ := io.ReadAll(resp.Body)
 			res := gjson.ParseBytes(body)
 
 			// display response
@@ -226,10 +251,12 @@ func main() {
 		}
 	})
 
-	port, ok := os.LookupEnv("PORT")
+	envPort, ok := os.LookupEnv("PORT")
 	if ok {
-		r.Run(":" + port)
+		r.Run(":" + envPort)
 	} else {
-		r.Run(":1188") // listen and serve on 0.0.0.0:1188
+		// by default, listen and serve on 0.0.0.0:1188
+		r.Run(fmt.Sprintf(":%v", port))
 	}
+
 }
