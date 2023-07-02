@@ -13,9 +13,6 @@
 </h1>
 <h4 align="center">Permanently free DeepL API written in Golang.</h4>
 <p align="center">
-  <a href="https://github.com/OwO-Network/DeepLX/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/OwO-Network/DeepLX/build.yml?branch=main&style=flat-square" alt="Github Actions">
-  </a>
   <a href="https://goreportcard.com/report/github.com/OwO-Network/DeepLX">
     <img src="https://goreportcard.com/badge/github.com/OwO-Network/DeepLX?style=flat-square">
   </a>
@@ -26,6 +23,9 @@
 
 ## **Python Package**
 [OwO-Network/PyDeepLX](https://github.com/OwO-Network/PyDeepLX)
+
+## Discussion Group
+[Telegram Group](https://t.me/+8KDGHKJCxEVkNzll)
 
 ## Description
 - `DeepLX` is listening to `0.0.0.0:1188` by default. You can modify the listening port by yourself.
