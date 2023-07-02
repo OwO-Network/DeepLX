@@ -1,3 +1,14 @@
+/*
+ * @Author: Vincent Young
+ * @Date: 2023-07-01 21:45:34
+ * @LastEditors: Vincent Young
+ * @LastEditTime: 2023-07-03 00:50:36
+ * @FilePath: /DeepLX/main.go
+ * @Telegram: https://t.me/missuo
+ *
+ * Copyright © 2023 by Vincent, All Rights Reserved.
+ */
+
 package main
 
 import (
