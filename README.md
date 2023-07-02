@@ -27,6 +27,9 @@
 ## **Python Package**
 [OwO-Network/PyDeepLX](https://github.com/OwO-Network/PyDeepLX)
 
+## Discussion Group
+[Telegram Group](https://t.me/+8KDGHKJCxEVkNzll)
+
 ## Description
 - `DeepLX` is listening to `0.0.0.0:1188` by default. You can modify the listening port by yourself.
 - `DeepLX` is using `DeepL` Free API.
