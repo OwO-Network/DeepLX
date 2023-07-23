@@ -23,6 +23,7 @@
 
 ## **Related Projects**
 [OwO-Network/PyDeepLX](https://github.com/OwO-Network/PyDeepLX): Python Package for DeepLX.
+
 [OwO-Network/gdeeplx](https://github.com/OwO-Network/gdeeplx): Golang Package for DeepLX.
 
 ## Discussion Group
