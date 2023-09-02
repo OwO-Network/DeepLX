@@ -20,6 +20,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -165,7 +166,7 @@ func main() {
 				"message": "No Translate Text Found",
 			})
 		} else {
-			url := "https://www2.deepl.com/jsonrpc"
+			requestURL := "https://www2.deepl.com/jsonrpc"
 			id = id + 1
 			postData := initData(sourceLang, targetLang)
 			text := Text{
@@ -190,7 +191,7 @@ func main() {
 
 			post_byte = []byte(postStr)
 			reader := bytes.NewReader(post_byte)
-			request, err := http.NewRequest("POST", url, reader)
+			request, err := http.NewRequest("POST", requestURL, reader)
 			if err != nil {
 				log.Println(err)
 				return
@@ -209,7 +210,26 @@ func main() {
 			request.Header.Set("x-app-version", "2.9.1")
 			request.Header.Set("Connection", "keep-alive")
 
-			client := &http.Client{}
+			proxyAddr := os.Getenv("DEEPLX_PROXY")
+			var client *http.Client
+			if proxyAddr != "" {
+				proxyURL, err := url.Parse(proxyAddr)
+				if err != nil {
+					log.Println(fmt.Errorf("error parsing proxy address: %s", proxyAddr))
+					return
+				}
+
+				transport := &http.Transport{
+					Proxy: http.ProxyURL(proxyURL),
+				}
+
+				client = &http.Client{
+					Transport: transport,
+				}
+			} else {
+				client = &http.Client{}
+			}
+
 			resp, err := client.Do(request)
 			if err != nil {
 				log.Println(err)

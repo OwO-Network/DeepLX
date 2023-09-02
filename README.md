@@ -60,6 +60,11 @@
 # or
 ./deeplx -port 3333
 ```
+### Proxy
+If you need to set up a proxy, you can set the environment variable `DEEPLX_PROXY`, for example `DEEPLX_PROXY=http://127.0.0.1:7890`
+or `DEEPLX_PROXY=socks5://127.0.0.1:7890`. If the variable is empty, it will not be enabled.
+
+If the proxy requires username and password for authentication, then use `http://username:password@ip:port` or `socks5://username:password@ip:port`.
 
 ### Run with Docker
 ```bash
