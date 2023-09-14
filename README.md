@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-07-23 20:42:10
+ * @LastEditTime: 2023-09-14 13:58:57
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -44,13 +44,15 @@
 ```json
 {
   "alternatives": [
-    "Undisputed",
-    "Unquestionable",
-    "Unquestionably"
+    "no one else",
+    "there is no other person (idiom); there is no one else",
+    "there is no other person"
   ],
   "code": 200,
-  "data": "Undoubtedly",
-  "id": 8300079001
+  "data": "there is no one else",
+  "id": 8352115005,
+  "source_lang": "ZH",
+  "target_lang": "EN"
 }
 ```
 ### Specify the port
