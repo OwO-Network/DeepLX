@@ -87,7 +87,7 @@ docker compose up -d
 ```bash
 bash <(curl -Ls https://raw.githubusercontent.com/OwO-Network/DeepLX/main/install.sh)
 # or
-bash <(curl -Ls https://cpp.li/deeplx)
+bash <(curl -Ls https://qwq.mx/deeplx)
 ```
 
 ### Run on Mac
