@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-09-14 13:58:57
+ * @LastEditTime: 2023-10-28 22:45:58
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -55,12 +55,29 @@
   "target_lang": "EN"
 }
 ```
-### Specify the port
+### Specify the port (Optional)
 **Thanks to [cijiugechu](https://github.com/cijiugechu) for [his contribution](https://github.com/OwO-Network/DeepLX/commit/4a0920579ea868b0f05ccdff6bceae316bfd5dc8) to make this feature possible for this project!**
 ```bash
 ./deeplx -p 3333
 # or
 ./deeplx -port 3333
+```
+### Set access password (Optional)
+**To prevent abuse of your public API, you can use a token to restrict translation requests.**
+```bash
+./deeplx -token hellodeeplx
+```
+
+```
+curl -X POST http://localhost:1188/translate \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer your_access_token" \
+-d '{
+    "text": "Hello, world!",
+    "source_lang": "EN",
+    "target_lang": "DE"
+}'
+
 ```
 
 ### Run with Docker

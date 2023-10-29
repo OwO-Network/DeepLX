@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2023-07-01 21:45:34
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-09-14 13:34:42
+ * @LastEditTime: 2023-10-28 22:42:08
  * @FilePath: /DeepLX/main.go
  * @Telegram: https://t.me/missuo
  *
@@ -32,6 +32,7 @@ import (
 )
 
 var port int
+var token string
 
 func init() {
 	const (
@@ -41,6 +42,7 @@ func init() {
 
 	flag.IntVar(&port, "port", defaultPort, usage)
 	flag.IntVar(&port, "p", defaultPort, usage)
+	flag.StringVar(&token, "token", "", "set the access token for /translate endpoint")
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
@@ -129,6 +131,21 @@ func main() {
 	fmt.Printf("DeepL X has been successfully launched! Listening on 0.0.0.0:%v\n", port)
 	fmt.Println("Developed by sjlleo <i@leo.moe> and missuo <me@missuo.me>.")
 
+	// Check if the token is set in the environment variable
+	if token == "" {
+		envToken, ok := os.LookupEnv("TOKEN")
+		if ok {
+			token = envToken
+			fmt.Println("Access token is set from the environment variable.")
+		}
+	}
+
+	if token == "" {
+		fmt.Println("Access token is not set. You can set it using the -token flag or the TOKEN environment variable.")
+	} else {
+		fmt.Println("Access token is set. Use the Authorization: Bearer <token> header to access /translate.")
+	}
+
 	// Generating a random ID
 	id := getRandomNumber()
 
@@ -149,6 +166,17 @@ func main() {
 	r.POST("/translate", func(c *gin.Context) {
 		reqj := ResData{}
 		c.BindJSON(&reqj)
+
+		if token != "" {
+			providedToken := c.GetHeader("Authorization")
+			if providedToken != "Bearer "+token {
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"code":    http.StatusUnauthorized,
+					"message": "Invalid access token",
+				})
+				return
+			}
+		}
 
 		// Extracting details from the request JSON
 		sourceLang := reqj.SourceLang
