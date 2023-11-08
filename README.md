@@ -18,15 +18,15 @@
 [![Go Report][3]](https://goreportcard.com/badge/github.com/OwO-Network/DeepLX)
 [![Maintainability][4]](https://codeclimate.com/github/OwO-Network/DeepLX/maintainability)
 [![GitHub License][5]](https://github.com/OwO-Network/DeepLX/blob/main/LICENSE)
-[![Docker Pulls][6]](https://hub.docker.com/r/OwO-Network/DeepLX)
+[![Docker Pulls][6]](https://hub.docker.com/r/missuo/DeepLX)
 [![Releases][7]](https://github.com/OwO-Network/DeepLX/releases)
 
-[1]: https://img.shields.io/github/actions/workflow/status/OwO-Network/DeepLX/release.yml?logo=github
+[1]: https://img.shields.io/github/actions/workflow/status/OwO-Network/DeepLX/build.yml?logo=github
 [2]: https://img.shields.io/github/go-mod/go-version/OwO-Network/DeepLX?logo=go
 [3]: https://goreportcard.com/badge/github.com/OwO-Network/DeepLX
 [4]: https://api.codeclimate.com/v1/badges/b5b30239174fc6603aca/maintainability
 [5]: https://img.shields.io/github/license/OwO-Network/DeepLX
-[6]: https://img.shields.io/docker/pulls/OwO-Network/DeepLX?logo=docker
+[6]: https://img.shields.io/docker/pulls/missuo/DeepLX?logo=docker
 [7]: https://img.shields.io/github/v/release/OwO-Network/DeepLX?logo=smartthings
 
 ## **Related Projects**
