@@ -19,6 +19,7 @@
   <a href="https://github.com/OwO-Network/DeepLX/releases">
     <img src="https://img.shields.io/github/release/OwO-Network/DeepLX/all.svg?style=flat-square">
   </a>
+<a href="https://app.fossa.com/projects/git%2Bgithub.com%2FOwO-Network%2FDeepLX?ref=badge_shield" alt="FOSSA Status"><img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2FOwO-Network%2FDeepLX.svg?type=shield"/></a>
 </p>
 
 ## **Related Projects**
@@ -195,3 +196,7 @@ docker run -itd -p 1188:80 missuo/deeplx-bk
 
 ## Author
 **DeepL X** © [DeepL X Contributors](https://github.com/OwO-Network/DeepLX/graphs/contributors), Released under the [MIT](./LICENSE) License.<br>
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FOwO-Network%2FDeepLX.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FOwO-Network%2FDeepLX?ref=badge_large)
