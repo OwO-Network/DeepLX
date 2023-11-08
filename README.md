@@ -8,19 +8,22 @@
  * 
  * Copyright © 2022 by Vincent, All Rights Reserved. 
 -->
-<h1 align="center">
-  <br>DeepL X<br>
-</h1>
-<h4 align="center">Permanently free DeepL API written in Golang.</h4>
-<p align="center">
-  <a href="https://goreportcard.com/report/github.com/OwO-Network/DeepLX">
-    <img src="https://goreportcard.com/badge/github.com/OwO-Network/DeepLX?style=flat-square">
-  </a>
-  <a href="https://github.com/OwO-Network/DeepLX/releases">
-    <img src="https://img.shields.io/github/release/OwO-Network/DeepLX/all.svg?style=flat-square">
-  </a>
-<a href="https://app.fossa.com/projects/git%2Bgithub.com%2FOwO-Network%2FDeepLX?ref=badge_shield" alt="FOSSA Status"><img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2FOwO-Network%2FDeepLX.svg?type=shield"/></a>
-</p>
+
+[![GitHub Workflow][1]](https://github.com/OwO-Network/DeepLX/actions)
+[![Go Version][2]](https://github.com/OwO-Network/DeepLX/blob/main/go.mod)
+[![Go Report][3]](https://goreportcard.com/badge/github.com/OwO-Network/DeepLX)
+[![Maintainability][4]](https://codeclimate.com/github/OwO-Network/DeepLX/maintainability)
+[![GitHub License][5]](https://github.com/OwO-Network/DeepLX/blob/main/LICENSE)
+[![Docker Pulls][6]](https://hub.docker.com/r/missuo/deeplx)
+[![Releases][7]](https://github.com/OwO-Network/DeepLX/releases)
+
+[1]: https://img.shields.io/github/actions/workflow/status/OwO-Network/DeepLX/build.yml?logo=github
+[2]: https://img.shields.io/github/go-mod/go-version/OwO-Network/DeepLX?logo=go
+[3]: https://goreportcard.com/badge/github.com/OwO-Network/DeepLX
+[4]: https://api.codeclimate.com/v1/badges/b5b30239174fc6603aca/maintainability
+[5]: https://img.shields.io/github/license/OwO-Network/DeepLX
+[6]: https://img.shields.io/docker/pulls/missuo/deeplx?logo=docker
+[7]: https://img.shields.io/github/v/release/OwO-Network/DeepLX?logo=smartthings
 
 ## **Related Projects**
 [OwO-Network/PyDeepLX](https://github.com/OwO-Network/PyDeepLX): Python Package for DeepLX.
@@ -195,8 +198,7 @@ docker run -itd -p 1188:80 missuo/deeplx-bk
 **This docker image is not related to this project, as the original author deleted the image, it is only for backup.**
 
 ## Author
-**DeepL X** © [DeepL X Contributors](https://github.com/OwO-Network/DeepLX/graphs/contributors), Released under the [MIT](./LICENSE) License.<br>
-
+**DeepL X** © [DeepL X Contributors](https://github.com/OwO-Network/DeepLX/graphs/contributors).<br>
 
 ## License
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FOwO-Network%2FDeepLX.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FOwO-Network%2FDeepLX?ref=badge_large)
