@@ -8,10 +8,6 @@
  * 
  * Copyright © 2022 by Vincent, All Rights Reserved. 
 -->
-<h1 align="center">
-  <br>DeepL X<br>
-</h1>
-<h4 align="center">Permanently free DeepL API written in Golang.</h4>
 
 [![GitHub Workflow][1]](https://github.com/OwO-Network/DeepLX/actions)
 [![Go Version][2]](https://github.com/OwO-Network/DeepLX/blob/main/go.mod)
