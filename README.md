@@ -26,11 +26,11 @@
 [7]: https://img.shields.io/github/v/release/OwO-Network/DeepLX?logo=smartthings
 
 ## **Related Projects**
-[OwO-Network/PyDeepLX](https://github.com/OwO-Network/PyDeepLX): Python Package for DeepLX.
-
-[OwO-Network/gdeeplx](https://github.com/OwO-Network/gdeeplx): Golang Package for DeepLX.
-
-[ifyour/deeplx](https://github.com/ifyour/deeplx): JS Package for DeepLX.
+| Link                                       | Description                            | Maintainer        |
+| ------------------------------------------ | -------------------------------------- | ----------------- |
+| [OwO-Network/PyDeepLX](https://github.com/OwO-Network/PyDeepLX) | Python Package for DeepLX              | OwO-Network       |
+| [OwO-Network/gdeeplx](https://github.com/OwO-Network/gdeeplx)   | Golang Package for DeepLX              | OwO-Network       |
+| [ifyour/deeplx](https://github.com/ifyour/deeplx)               | JS Package for DeepLX (JavaScript)     | ifyour            |
 
 ## Discussion Group
 [Telegram Group](https://t.me/+8KDGHKJCxEVkNzll)
