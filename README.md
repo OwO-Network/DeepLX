@@ -30,6 +30,8 @@
 
 [OwO-Network/gdeeplx](https://github.com/OwO-Network/gdeeplx): Golang Package for DeepLX.
 
+[ifyour/deeplx)](https://github.com/ifyour/deeplx): JS Package for DeepLX.
+
 ## Discussion Group
 [Telegram Group](https://t.me/+8KDGHKJCxEVkNzll)
 
