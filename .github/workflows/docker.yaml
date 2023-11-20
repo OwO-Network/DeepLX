@@ -8,7 +8,6 @@ on:
       - 'v*'
 
 env:
-  # github.repository as <account>/<repo>
   DOCKER_IMAGE_NAME: missuo/deeplx
   GHCR_IMAGE_NAME: ${{ github.repository }}
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}

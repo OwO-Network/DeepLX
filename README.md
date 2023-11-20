@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-10-28 22:45:58
+ * @LastEditTime: 2023-11-19 19:21:24
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -17,7 +17,7 @@
 [![Docker Pulls][6]](https://hub.docker.com/r/missuo/deeplx)
 [![Releases][7]](https://github.com/OwO-Network/DeepLX/releases)
 
-[1]: https://img.shields.io/github/actions/workflow/status/OwO-Network/DeepLX/build.yml?logo=github
+[1]: https://img.shields.io/github/actions/workflow/status/OwO-Network/DeepLX/release.yaml?logo=github
 [2]: https://img.shields.io/github/go-mod/go-version/OwO-Network/DeepLX?logo=go
 [3]: https://goreportcard.com/badge/github.com/OwO-Network/DeepLX
 [4]: https://api.codeclimate.com/v1/badges/b5b30239174fc6603aca/maintainability
