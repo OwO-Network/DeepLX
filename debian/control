@@ -1,4 +1,4 @@
-Source: OwO Network Limited
+Source: deeplx
 Section: misc
 Maintainer: Vincent Yang <me@missuo.me>
 Build-Depends: debhelper (>= 9)
