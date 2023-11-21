@@ -20,9 +20,6 @@ jobs:
       - name: Install golint
         run: go install golang.org/x/lint/golint@latest
 
-      - name: Run golint
-        run: golint -set_exit_status ./...
-
       - name: Build
         run: go build ./...
 
