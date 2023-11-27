@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2023-07-01 21:45:34
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-11-27 11:59:51
+ * @LastEditTime: 2023-11-27 14:49:02
  * @FilePath: /DeepLX/main.go
  * @Telegram: https://t.me/missuo
  *
@@ -36,17 +36,36 @@ var port int
 var token string
 var authKey string
 
-func init() {
-	const (
-		defaultPort = 1188
-		usage       = "set up the port to listen on"
-	)
+type Config struct {
+	Port    int
+	Token   string
+	AuthKey string
+}
 
-	flag.IntVar(&port, "port", defaultPort, usage)
-	flag.IntVar(&port, "p", defaultPort, usage)
-	flag.StringVar(&token, "token", "", "set the access token for /translate endpoint")
+func InitConfig() *Config {
+	cfg := &Config{
+		Port: 1188,
+	}
 
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	flag.IntVar(&cfg.Port, "port", cfg.Port, "set up the port to listen on")
+	flag.IntVar(&cfg.Port, "p", cfg.Port, "set up the port to listen on")
+
+	flag.StringVar(&cfg.Token, "token", "", "set the access token for /translate endpoint")
+	if cfg.Token == "" {
+		if token, ok := os.LookupEnv("TOKEN"); ok {
+			cfg.Token = token
+		}
+	}
+
+	flag.StringVar(&cfg.AuthKey, "authkey", "", "The authentication key for DeepL API")
+	if cfg.AuthKey == "" {
+		if authKey, ok := os.LookupEnv("AUTHKEY"); ok {
+			cfg.AuthKey = authKey
+		}
+	}
+
+	flag.Parse()
+	return cfg
 }
 
 type Lang struct {
@@ -119,17 +138,16 @@ func getTimeStamp(iCount int64) int64 {
 	}
 }
 
-type ResData struct {
+type PayloadFree struct {
 	TransText  string `json:"text"`
 	SourceLang string `json:"source_lang"`
 	TargetLang string `json:"target_lang"`
 }
 
-type Payload struct {
+type PayloadAPI struct {
 	Text       []string `json:"text"`
 	TargetLang string   `json:"target_lang"`
 	SourceLang string   `json:"source_lang"`
-	GlossaryID string   `json:"glossary_id"`
 }
 
 type Translation struct {
@@ -144,7 +162,7 @@ func translateByAPI(text string, targetLang string, sourceLang string, authKey s
 	url := "https://api-free.deepl.com/v2/translate"
 	textArray := strings.Split(text, "\n")
 
-	payload := Payload{
+	payload := PayloadAPI{
 		Text:       textArray,
 		TargetLang: targetLang,
 		SourceLang: sourceLang,
@@ -192,39 +210,16 @@ func translateByAPI(text string, targetLang string, sourceLang string, authKey s
 }
 
 func main() {
-	// Parsing the command-line flags
-	flag.StringVar(&authKey, "authkey", "", "The authentication key for DeepL API")
-	flag.Parse()
+	cfg := InitConfig()
 
-	// Displaying initialization information
-	fmt.Printf("DeepL X has been successfully launched! Listening on 0.0.0.0:%v\n", port)
+	fmt.Printf("DeepL X has been successfully launched! Listening on 0.0.0.0:%v\n", cfg.Port)
 	fmt.Println("Developed by sjlleo <i@leo.moe> and missuo <me@missuo.me>.")
 
-	// Check if the token is set in the environment variable
-	if token == "" {
-		envToken, ok := os.LookupEnv("TOKEN")
-		if ok {
-			token = envToken
-			fmt.Println("Access token is set from the environment variable.")
-		}
+	if cfg.Token != "" {
+		fmt.Println("Access token is set.")
 	}
-
-	if token == "" {
-		fmt.Println("Access token is not set. You can set it using the -token flag or the TOKEN environment variable.")
-	} else {
-		fmt.Println("Access token is set. Use the Authorization: Bearer <token> header to access /translate.")
-	}
-
-	if authKey == "" {
-		envAuthKey, ok := os.LookupEnv("AUTHKEY")
-		if ok {
-			authKey = envAuthKey
-			fmt.Println("Authentication key is set from the environment variable.")
-		} else {
-			fmt.Println("Authentication key is not set. You can set it using the -authkey flag or the AUTHKEY environment variable.")
-		}
-	} else {
-		fmt.Println("Authentication key is set via command-line.")
+	if cfg.AuthKey != "" {
+		fmt.Println("DeepL Official Authentication key is set.")
 	}
 
 	// Generating a random ID
@@ -245,12 +240,12 @@ func main() {
 
 	// Defining the translation endpoint which receives translation requests and returns translations
 	r.POST("/translate", func(c *gin.Context) {
-		reqj := ResData{}
-		c.BindJSON(&reqj)
+		req := PayloadFree{}
+		c.BindJSON(&req)
 
-		if token != "" {
+		if cfg.Token != "" {
 			providedToken := c.GetHeader("Authorization")
-			if providedToken != "Bearer "+token {
+			if providedToken != "Bearer "+cfg.Token {
 				c.JSON(http.StatusUnauthorized, gin.H{
 					"code":    http.StatusUnauthorized,
 					"message": "Invalid access token",
@@ -260,9 +255,9 @@ func main() {
 		}
 
 		// Extracting details from the request JSON
-		sourceLang := reqj.SourceLang
-		targetLang := reqj.TargetLang
-		translateText := reqj.TransText
+		sourceLang := req.SourceLang
+		targetLang := req.TargetLang
+		translateText := req.TransText
 
 		// If source language is not specified, auto-detect it
 		if sourceLang == "" {
@@ -361,16 +356,17 @@ func main() {
 		}
 
 		if resp.StatusCode == http.StatusTooManyRequests {
-			translatedText, err := translateByAPI(translateText, sourceLang, targetLang, authKey)
+			translatedText, err := translateByAPI(translateText, sourceLang, targetLang, cfg.AuthKey)
 			if err != nil {
 				c.JSON(http.StatusTooManyRequests, gin.H{
 					"code":    http.StatusTooManyRequests,
 					"message": "Too Many Requests",
 				})
+				return
 			}
 			c.JSON(http.StatusOK, gin.H{
 				"code":        http.StatusOK,
-				"id":          1000000,
+				"id":          114514,
 				"data":        translatedText,
 				"source_lang": sourceLang,
 				"target_lang": targetLang,
@@ -402,11 +398,10 @@ func main() {
 		})
 	})
 
-	// Determining which port to run the server on, with a fallback to a default port
 	envPort, ok := os.LookupEnv("PORT")
 	if ok {
 		r.Run(":" + envPort)
 	} else {
-		r.Run(fmt.Sprintf(":%v", port))
+		r.Run(fmt.Sprintf(":%v", cfg.Port))
 	}
 }
