@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-11-27 15:03:26
+ * @LastEditTime: 2023-11-27 15:06:22
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -28,9 +28,9 @@
 ## **Related Projects**
 | Link                                       | Description                            | Maintainer        |
 | ------------------------------------------ | -------------------------------------- | ----------------- |
-| [OwO-Network/PyDeepLX](https://github.com/OwO-Network/PyDeepLX) | Python Package for DeepLX              | OwO-Network       |
-| [OwO-Network/gdeeplx](https://github.com/OwO-Network/gdeeplx)   | Golang Package for DeepLX              | OwO-Network       |
-| [ifyour/deeplx](https://github.com/ifyour/deeplx)               | JS Package for DeepLX (JavaScript)     | ifyour            |
+| [OwO-Network/PyDeepLX](https://github.com/OwO-Network/PyDeepLX) | Python Package for DeepLX              | [Vincent Yang](https://github.com/missuo)       |
+| [OwO-Network/gdeeplx](https://github.com/OwO-Network/gdeeplx)   | Golang Package for DeepLX              | [Vincent Yang](https://github.com/missuo)        |
+| [ifyour/deeplx](https://github.com/ifyour/deeplx)               | JS Package for DeepLX (JavaScript)     | [ifyour](https://github.com/ifyour)             |
 
 ## Discussion Group
 [Telegram Group](https://t.me/+8KDGHKJCxEVkNzll)
