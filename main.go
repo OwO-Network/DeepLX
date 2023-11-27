@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2023-07-01 21:45:34
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-11-18 04:12:49
+ * @LastEditTime: 2023-11-27 11:59:51
  * @FilePath: /DeepLX/main.go
  * @Telegram: https://t.me/missuo
  *
@@ -17,6 +17,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -33,6 +34,7 @@ import (
 
 var port int
 var token string
+var authKey string
 
 func init() {
 	const (
@@ -123,8 +125,75 @@ type ResData struct {
 	TargetLang string `json:"target_lang"`
 }
 
+type Payload struct {
+	Text       []string `json:"text"`
+	TargetLang string   `json:"target_lang"`
+	SourceLang string   `json:"source_lang"`
+	GlossaryID string   `json:"glossary_id"`
+}
+
+type Translation struct {
+	Text string `json:"text"`
+}
+
+type TranslationResponse struct {
+	Translations []Translation `json:"translations"`
+}
+
+func translateByAPI(text string, targetLang string, sourceLang string, authKey string) (string, error) {
+	url := "https://api-free.deepl.com/v2/translate"
+	textArray := strings.Split(text, "\n")
+
+	payload := Payload{
+		Text:       textArray,
+		TargetLang: targetLang,
+		SourceLang: sourceLang,
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Authorization", "DeepL-Auth-Key "+authKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	// Parsing the response
+	var translationResponse TranslationResponse
+	err = json.Unmarshal(body, &translationResponse)
+	if err != nil {
+		return "", err
+	}
+
+	// Concatenating the translations
+	var sb strings.Builder
+	for _, translation := range translationResponse.Translations {
+		sb.WriteString(translation.Text)
+	}
+
+	return sb.String(), nil
+}
+
 func main() {
 	// Parsing the command-line flags
+	flag.StringVar(&authKey, "authkey", "", "The authentication key for DeepL API")
 	flag.Parse()
 
 	// Displaying initialization information
@@ -144,6 +213,18 @@ func main() {
 		fmt.Println("Access token is not set. You can set it using the -token flag or the TOKEN environment variable.")
 	} else {
 		fmt.Println("Access token is set. Use the Authorization: Bearer <token> header to access /translate.")
+	}
+
+	if authKey == "" {
+		envAuthKey, ok := os.LookupEnv("AUTHKEY")
+		if ok {
+			authKey = envAuthKey
+			fmt.Println("Authentication key is set from the environment variable.")
+		} else {
+			fmt.Println("Authentication key is not set. You can set it using the -authkey flag or the AUTHKEY environment variable.")
+		}
+	} else {
+		fmt.Println("Authentication key is set via command-line.")
 	}
 
 	// Generating a random ID
@@ -280,9 +361,20 @@ func main() {
 		}
 
 		if resp.StatusCode == http.StatusTooManyRequests {
-			c.JSON(http.StatusTooManyRequests, gin.H{
-				"code":    http.StatusTooManyRequests,
-				"message": "Too Many Requests",
+			translatedText, err := translateByAPI(translateText, sourceLang, targetLang, authKey)
+			if err != nil {
+				c.JSON(http.StatusTooManyRequests, gin.H{
+					"code":    http.StatusTooManyRequests,
+					"message": "Too Many Requests",
+				})
+			}
+			c.JSON(http.StatusOK, gin.H{
+				"code":        http.StatusOK,
+				"id":          1000000,
+				"data":        translatedText,
+				"source_lang": sourceLang,
+				"target_lang": targetLang,
+				"method":      "Official API",
 			})
 		} else {
 			var alternatives []string
@@ -297,6 +389,7 @@ func main() {
 				"alternatives": alternatives,
 				"source_lang":  sourceLang,
 				"target_lang":  targetLang,
+				"method":       "Free",
 			})
 		}
 	})
