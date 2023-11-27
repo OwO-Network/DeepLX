@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2023-07-01 21:45:34
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-11-27 14:49:02
+ * @LastEditTime: 2023-11-27 15:10:06
  * @FilePath: /DeepLX/main.go
  * @Telegram: https://t.me/missuo
  *
@@ -31,10 +31,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
 )
-
-var port int
-var token string
-var authKey string
 
 type Config struct {
 	Port    int
