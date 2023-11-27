@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-11-19 19:21:24
+ * @LastEditTime: 2023-11-27 15:03:26
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -41,39 +41,35 @@
 - `DeepLX` is unlimited to the number of requests.
 
 ## Usage
-### Request Parameters
+### For Developer
+#### Request Parameters
 - text: string
 - source_lang: string
 - target_lang: string
 
-### Response
+#### Response
 ```json
 {
   "alternatives": [
-    "no one else",
-    "there is no other person (idiom); there is no one else",
-    "there is no other person"
+    "Did you hear about this?",
+    "You've heard about this?",
+    "You've heard of this?"
   ],
   "code": 200,
-  "data": "there is no one else",
-  "id": 8352115005,
+  "data": "Have you heard about this?",
+  "id": 8356681003,
+  "method": "Free",
   "source_lang": "ZH",
   "target_lang": "EN"
 }
 ```
-### Specify the port (Optional)
-**Thanks to [cijiugechu](https://github.com/cijiugechu) for [his contribution](https://github.com/OwO-Network/DeepLX/commit/4a0920579ea868b0f05ccdff6bceae316bfd5dc8) to make this feature possible for this project!**
-```bash
-./deeplx -p 3333
-# or
-./deeplx -port 3333
-```
-### Set access password (Optional)
-**To prevent abuse of your public API, you can use a token to restrict translation requests.**
-```bash
-./deeplx -token hellodeeplx
-```
+### Custom Options
+**The following settings are optional and not required.**
+- `-port` or `-p` : Listening port. Default is `1188`.
+- `-token` : Access token. If you have set it up, each request will need to include an `Authorization` header.
+- `-authkey` : DeepL Official `AuthKey`. If you have set it up, after the 429 response, the official AuthKey will be used for the request.
 
+#### Requesting a token-protected **DeepLX API** instance using the `curl`
 ```
 curl -X POST http://localhost:1188/translate \
 -H "Content-Type: application/json" \
@@ -83,7 +79,6 @@ curl -X POST http://localhost:1188/translate \
     "source_lang": "EN",
     "target_lang": "DE"
 }'
-
 ```
 
 ### Run with Docker
@@ -91,18 +86,26 @@ curl -X POST http://localhost:1188/translate \
 # ghcr.io
 docker run -itd -p 1188:1188 ghcr.io/owo-network/deeplx:latest
 
+# custom environment variables
+docker run -itd -p 1188:1188 -e "TOKEN=helloxxx" -e "AUTHKEY=xxxx:fx" ghcr.io/owo-network/deeplx:latest
+
 # dockerhub
 docker run -itd -p 1188:1188 missuo/deeplx:latest
+
+# custom environment variables
+docker run -itd -p 1188:1188 -e "TOKEN=helloxxx" -e "AUTHKEY=xxxx:fx" missuo/deeplx:latest
 ```
 
 ### Run with Docker Compose
 ```bash
 mkdir deeplx
 cd deeplx
-wget https://raw.githubusercontent.com/OwO-Network/DeepLX/main/docker-compose.yaml
-# docker compose v1
-docker-compose up -d
-# or docker compose v2
+wget https://raw.githubusercontent.com/OwO-Network/DeepLX/main/compose.yaml
+# modify environment variables
+# environment:
+  # - TOKEN=helloxxx
+  # - AUTHKEY=xxxxxxx:fx
+# docker compose
 docker compose up -d
 ```
 
