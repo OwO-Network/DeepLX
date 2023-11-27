@@ -7,5 +7,5 @@ services:
     ports:
       - "1188:1188"
     # environment:
-      # - TOKEN="xxx"
-      # - AUTHKEY="xxx"
+      # - TOKEN=helloworld
+      # - AUTHKEY=xxxxxxx:fx
