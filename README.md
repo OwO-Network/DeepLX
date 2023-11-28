@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-11-27 15:06:22
+ * @LastEditTime: 2023-11-28 00:24:20
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -67,7 +67,7 @@
 **The following settings are optional and not required.**
 - `-port` or `-p` : Listening port. Default is `1188`.
 - `-token` : Access token. If you have set it up, each request will need to include an `Authorization` header.
-- `-authkey` : DeepL Official `AuthKey`. If you have set it up, after the 429 response, the official AuthKey will be used for the request.
+- `-authkey` : DeepL Official `AuthKey`. If you have set it up, after the 429 response, the official AuthKey will be used for the request. If multiple authKeys are used simultaneously, they need to be separated by commas.
 
 #### Requesting a token-protected **DeepLX API** instance using the `curl`
 ```

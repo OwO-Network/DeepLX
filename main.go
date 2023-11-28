@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2023-07-01 21:45:34
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-11-27 15:10:06
+ * @LastEditTime: 2023-11-28 00:23:42
  * @FilePath: /DeepLX/main.go
  * @Telegram: https://t.me/missuo
  *
@@ -205,6 +205,40 @@ func translateByAPI(text string, targetLang string, sourceLang string, authKey s
 	return sb.String(), nil
 }
 
+type DeepLResponse struct {
+	CharacterCount int `json:"character_count"`
+	CharacterLimit int `json:"character_limit"`
+}
+
+func checkUsage(authKey string) (bool, error) {
+	url := "https://api-free.deepl.com/v2/usage"
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req.Header.Add("Authorization", "DeepL-Auth-Key "+authKey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return false, err
+	}
+
+	var response DeepLResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return false, err
+	}
+	return response.CharacterCount < 499900, nil
+}
+
 func main() {
 	cfg := InitConfig()
 
@@ -352,22 +386,33 @@ func main() {
 		}
 
 		if resp.StatusCode == http.StatusTooManyRequests {
-			translatedText, err := translateByAPI(translateText, sourceLang, targetLang, cfg.AuthKey)
-			if err != nil {
-				c.JSON(http.StatusTooManyRequests, gin.H{
-					"code":    http.StatusTooManyRequests,
-					"message": "Too Many Requests",
-				})
-				return
+			authKeyArray := strings.Split(cfg.AuthKey, ",")
+			for _, authKey := range authKeyArray {
+				validity, err := checkUsage(authKey)
+				if err != nil {
+					continue
+				} else {
+					if validity == true {
+						translatedText, err := translateByAPI(translateText, sourceLang, targetLang, authKey)
+						if err != nil {
+							c.JSON(http.StatusTooManyRequests, gin.H{
+								"code":    http.StatusTooManyRequests,
+								"message": "Too Many Requests",
+							})
+						}
+						c.JSON(http.StatusOK, gin.H{
+							"code":        http.StatusOK,
+							"id":          1000000,
+							"data":        translatedText,
+							"source_lang": sourceLang,
+							"target_lang": targetLang,
+							"method":      "Official API",
+						})
+						return
+					}
+				}
+
 			}
-			c.JSON(http.StatusOK, gin.H{
-				"code":        http.StatusOK,
-				"id":          114514,
-				"data":        translatedText,
-				"source_lang": sourceLang,
-				"target_lang": targetLang,
-				"method":      "Official API",
-			})
 		} else {
 			var alternatives []string
 			res.Get("result.texts.0.alternatives").ForEach(func(key, value gjson.Result) bool {
