@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2023-07-01 21:45:34
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-11-28 00:23:42
+ * @LastEditTime: 2023-11-28 21:02:08
  * @FilePath: /DeepLX/main.go
  * @Telegram: https://t.me/missuo
  *
@@ -154,7 +154,7 @@ type TranslationResponse struct {
 	Translations []Translation `json:"translations"`
 }
 
-func translateByAPI(text string, targetLang string, sourceLang string, authKey string) (string, error) {
+func translateByAPI(text string, sourceLang string, targetLang string, authKey string) (string, error) {
 	url := "https://api-free.deepl.com/v2/translate"
 	textArray := strings.Split(text, "\n")
 
