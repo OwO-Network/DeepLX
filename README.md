@@ -118,7 +118,6 @@ bash <(curl -Ls https://qwq.mx/deeplx)
 
 ### Run on Mac
 #### Homebrew (Recommended)
-**Homebrew has been fixed in the latest version and works perfectly.**
 ```bash
 brew tap owo-network/brew
 brew install deeplx
