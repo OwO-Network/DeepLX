@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2023-07-01 21:45:34
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-11-28 21:02:08
+ * @LastEditTime: 2023-12-08 19:00:47
  * @FilePath: /DeepLX/main.go
  * @Telegram: https://t.me/missuo
  *
@@ -262,8 +262,8 @@ func main() {
 
 	// Defining the root endpoint which returns the project details
 	r.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"code":    200,
+		c.JSON(http.StatusOK, gin.H{
+			"code":    http.StatusOK,
 			"message": "DeepL Free API, Developed by sjlleo and missuo. Go to /translate with POST. http://github.com/OwO-Network/DeepLX",
 		})
 	})
