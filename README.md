@@ -161,6 +161,11 @@ systemctl daemon-reload
 systemctl enable deeplx
 
 ```
+
+### Run on Sealos
+
+[![](https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg)](https://cloud.sealos.io/?openapp=system-template%3FtemplateName%3Ddeeplx)
+
 ## Setup on [Bob App](https://bobtranslate.com/)
 1. Install [bob-plugin-deeplx](https://github.com/missuo/bob-plugin-deeplx) on Bob.
 
