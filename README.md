@@ -31,7 +31,7 @@
 | [OwO-Network/PyDeepLX](https://github.com/OwO-Network/PyDeepLX)     | Python Package for DeepLX           | [Vincent Yang](https://github.com/missuo)                       |
 | [OwO-Network/gdeeplx](https://github.com/OwO-Network/gdeeplx)       | Golang Package for DeepLX           | [Vincent Yang](https://github.com/missuo)                       |
 | [ifyour/deeplx](https://github.com/ifyour/deeplx)                   | JS Package for DeepLX (JavaScript)  | [ifyour](https://github.com/ifyour)                             |
-| [deeplx-serverless](https://github.com/LegendLeo/deeplx-serverless) | Serverless Package for DeepLX       | [LegendLeo](<(https://github.com/LegendLeo/deeplx-serverless)>) |
+| [deeplx-serverless](https://github.com/LegendLeo/deeplx-serverless) | Serverless Package for DeepLX       | [LegendLeo](https://github.com/LegendLeo/deeplx-serverless)     |
 
 ## Discussion Group
 [Telegram Group](https://t.me/+8KDGHKJCxEVkNzll)
