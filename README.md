@@ -215,5 +215,8 @@ docker run -itd -p 1188:80 missuo/deeplx-bk
   <img src="https://contrib.rocks/image?repo=OwO-Network/DeepLX&anon=0" />
 </a>
 
+## Activity
+![Alt](https://repobeats.axiom.co/api/embed/5f473f85db27cb30028a2f3db7a560f3577a4860.svg "Repobeats analytics image")
+
 ## License
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FOwO-Network%2FDeepLX.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FOwO-Network%2FDeepLX?ref=badge_large)
