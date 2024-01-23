@@ -211,7 +211,7 @@ docker run -itd -p 1188:80 missuo/deeplx-bk
 
 ### Contributors
 
-<a href="https://github.com/aaamoon/copilot-gpt4-service/graphs/contributors">
+<a href="https://github.com/OwO-Network/DeepLX/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=OwO-Network/DeepLX&anon=0" />
 </a>
 
