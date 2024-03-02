@@ -172,7 +172,7 @@ systemctl enable deeplx
 1. Install [bob-plugin-deeplx](https://github.com/missuo/bob-plugin-deeplx) on Bob.
 
 2. Setup the API. (If you use Brew to install locally you can skip this step)
-![c5c19dd89df6fae1a256d](https://missuo.ru/file/c5c19dd89df6fae1a256d.png)
+![c5c19dd89df6fae1a256d](./img/c5c19dd89df6fae1a256d.png)
 
 ## Setup on [immersive-translate](https://github.com/immersive-translate/immersive-translate)
 **It is not recommended, because the `immersive-translate` will send many requests in a short time, which will cause the `DeepL API` to block your IP.**
@@ -183,7 +183,7 @@ systemctl enable deeplx
 
 3. Set the URL. (If you are not deploying locally, you need to change 127.0.0.1 to the IP of your server)
 
-![6a48ba28621f2465028f0](https://missuo.ru/file/6a48ba28621f2465028f0.png)
+![6a48ba28621f2465028f0](./img/6a48ba28621f2465028f0.png)
 
 ## Use in Python
 ```python
