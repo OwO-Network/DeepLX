@@ -160,8 +160,9 @@ After installation, start the daemon with the following command.
 ```bash
 systemctl daemon-reload
 systemctl enable deeplx
-
 ```
+
+**Special thanks to [AsukaMinato](https://github.com/asukaminato0721) for maintaining the updates of [ArchLinux packages](https://aur.archlinux.org/packages/deeplx-bin).**
 
 ### Run on Sealos
 
