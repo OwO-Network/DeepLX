@@ -67,7 +67,7 @@
 ### Custom Options
 **The following settings are optional and not required.**
 - `-port` or `-p` : Listening port. Default is `1188`.
-- `-token` : Access token. If you have set it up, each request will need to include an `Authorization` header.
+- `-token` : Access token. If you have set it up, each request will needs to include an `Authorization` header or `token` parameter in the parameters.
 - `-authkey` : DeepL Official `AuthKey`. If you have set it up, after the 429 response, the official AuthKey will be used for the request. If multiple authKeys are used simultaneously, they need to be separated by commas.
 
 #### Requesting a token-protected **DeepLX API** instance using the `curl`
@@ -75,6 +75,16 @@
 curl -X POST http://localhost:1188/translate \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer your_access_token" \
+-d '{
+    "text": "Hello, world!",
+    "source_lang": "EN",
+    "target_lang": "DE"
+}'
+```
+or
+```
+curl -X POST http://localhost:1188/translate?token=your_access_token \
+-H "Content-Type: application/json" \
 -d '{
     "text": "Hello, world!",
     "source_lang": "EN",
