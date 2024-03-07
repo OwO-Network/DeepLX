@@ -67,7 +67,7 @@
 ### Custom Options
 **The following settings are optional and not required.**
 - `-port` or `-p` : Listening port. Default is `1188`.
-- `-token` : Access token. If you have set it up, each request will needs to include an `Authorization` header or `token` parameter in the parameters.
+- `-token` : Access token. If you have set it up, each request needs to include `Authorization` in the **Headers** or `token` parameter in the **URL Params**.
 - `-authkey` : DeepL Official `AuthKey`. If you have set it up, after the 429 response, the official AuthKey will be used for the request. If multiple authKeys are used simultaneously, they need to be separated by commas.
 
 #### Requesting a token-protected **DeepLX API** instance using the `curl`
