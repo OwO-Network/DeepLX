@@ -274,8 +274,9 @@ func main() {
 		c.BindJSON(&req)
 
 		if cfg.Token != "" {
-			providedToken := c.GetHeader("Authorization")
-			if providedToken != "Bearer "+cfg.Token {
+			providedTokenInQuery := c.Query("token")
+			providedTokenInHeader := c.GetHeader("Authorization")
+			if providedTokenInHeader != "Bearer "+cfg.Token && providedTokenInQuery != cfg.Token {
 				c.JSON(http.StatusUnauthorized, gin.H{
 					"code":    http.StatusUnauthorized,
 					"message": "Invalid access token",
