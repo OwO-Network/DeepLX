@@ -23,5 +23,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           draft: false
+          generate_release_notes: true
           files: |
             dist/*
