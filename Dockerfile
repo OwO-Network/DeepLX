@@ -3,6 +3,7 @@
 FROM golang:1.22 AS builder
 WORKDIR /go/src/github.com/OwO-Network/DeepLX
 COPY main.go ./
+COPY dto.go ./
 COPY go.mod ./
 COPY go.sum ./
 RUN go get -d -v ./

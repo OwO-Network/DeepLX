@@ -2,8 +2,8 @@
 ###
  # @Author: Vincent Young
  # @Date: 2022-10-20 02:19:06
- # @LastEditors: Vincent Young
- # @LastEditTime: 2023-02-18 20:45:52
+ # @LastEditors: Vincent Yang
+ # @LastEditTime: 2024-03-20 16:52:40
  # @FilePath: /DeepLX/.cross_compile.sh
  # @Telegram: https://t.me/missuo
  # 
@@ -30,9 +30,9 @@ for pl in ${PLATFORMS}; do
     echo "build => ${TARGET}"
     if [ "${DEBUG_MODE}" == "debug" ]; then
         CGO_ENABLED=0 go build -trimpath -gcflags "all=-N -l" -o ${TARGET} \
-            -ldflags "-w -s" main.go
+            -ldflags "-w -s" .
     else
         CGO_ENABLED=0 go build -trimpath -o ${TARGET} \
-            -ldflags "-w -s" main.go
+            -ldflags "-w -s" .
     fi
 done
