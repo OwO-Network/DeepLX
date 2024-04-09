@@ -2,7 +2,7 @@
  * @Author: Vincent Yang
  * @Date: 2023-07-01 21:45:34
  * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-03-20 16:39:58
+ * @LastEditTime: 2024-04-09 03:02:08
  * @FilePath: /DeepLX/main.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -314,16 +314,23 @@ func translateByDeepLX(sourceLang string, targetLang string, translateText strin
 			alternatives = append(alternatives, value.Get("text").String())
 			return true
 		})
-		return DeepLXTranslationResult{
-			Code:         http.StatusOK,
-			ID:           id,
-			Message:      "Success",
-			Data:         res.Get("result.texts.0.text").String(),
-			Alternatives: alternatives,
-			SourceLang:   sourceLang,
-			TargetLang:   targetLang,
-			Method:       "Free",
-		}, nil
+		if res.Get("result.texts.0.text").String() == "" {
+			return DeepLXTranslationResult{
+				Code:    http.StatusServiceUnavailable,
+				Message: "Translation failed, API returns an empty result.",
+			}, nil
+		} else {
+			return DeepLXTranslationResult{
+				Code:         http.StatusOK,
+				ID:           id,
+				Message:      "Success",
+				Data:         res.Get("result.texts.0.text").String(),
+				Alternatives: alternatives,
+				SourceLang:   sourceLang,
+				TargetLang:   targetLang,
+				Method:       "Free",
+			}, nil
+		}
 	}
 	return DeepLXTranslationResult{
 		Code:    http.StatusServiceUnavailable,
