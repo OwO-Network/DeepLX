@@ -2,7 +2,7 @@
  * @Author: Vincent Yang
  * @Date: 2023-07-01 21:45:34
  * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-04-09 03:02:08
+ * @LastEditTime: 2024-04-13 18:50:25
  * @FilePath: /DeepLX/main.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -338,6 +338,24 @@ func translateByDeepLX(sourceLang string, targetLang string, translateText strin
 	}, nil
 }
 
+func authMiddleware(cfg *Config) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if cfg.Token != "" {
+			providedTokenInQuery := c.Query("token")
+			providedTokenInHeader := c.GetHeader("Authorization")
+			if providedTokenInHeader != "Bearer "+cfg.Token && providedTokenInQuery != cfg.Token {
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"code":    http.StatusUnauthorized,
+					"message": "Invalid access token",
+				})
+				c.Abort()
+				return
+			}
+		}
+		c.Next()
+	}
+}
+
 func main() {
 	cfg := initConfig()
 
@@ -365,21 +383,9 @@ func main() {
 	})
 
 	// Defining the translation endpoint which receives translation requests and returns translations
-	r.POST("/translate", func(c *gin.Context) {
+	r.POST("/translate", authMiddleware(cfg), func(c *gin.Context) {
 		req := PayloadFree{}
 		c.BindJSON(&req)
-
-		if cfg.Token != "" {
-			providedTokenInQuery := c.Query("token")
-			providedTokenInHeader := c.GetHeader("Authorization")
-			if providedTokenInHeader != "Bearer "+cfg.Token && providedTokenInQuery != cfg.Token {
-				c.JSON(http.StatusUnauthorized, gin.H{
-					"code":    http.StatusUnauthorized,
-					"message": "Invalid access token",
-				})
-				return
-			}
-		}
 
 		sourceLang := req.SourceLang
 		targetLang := req.TargetLang
@@ -410,7 +416,7 @@ func main() {
 		}
 	})
 
-	r.POST("/v2/translate", func(c *gin.Context) {
+	r.POST("/v2/translate", authMiddleware(cfg), func(c *gin.Context) {
 		authorizationHeader := c.GetHeader("Authorization")
 		parts := strings.Split(authorizationHeader, " ")
 		var authKey string
