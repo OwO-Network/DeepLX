@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2024-04-16 14:52:46
+ * @LastEditTime: 2024-04-16 15:10:38
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -71,10 +71,10 @@
 - `-authkey` : DeepL Official `AuthKey`. If you have set it up, after the 429 response, the official AuthKey will be used for the request. If multiple authKeys are used simultaneously, they need to be separated by commas.
 - `/v2/translate` : This endpoint is fully compatible with the DeepL official API. When using this endpoint, please strictly adhere to the request styles outlined in the official DeepL documentation. Note that in this endpoint, please use `DeepL-Auth-Key $token` in the `Authorization`, which is actually the Access Token, not the official `Auth Key` of DeepL.
 
+#### Example of requesting a token-protected `/v2/translate` endpoint
 ```bash
-# Example of requesting a token-protected /v2/translate endpoint
-curl -X POST 'http://127.0.0.1:1188/v2/translate' \
---header 'Authorization: DeepL-Auth-Key [yourAccessToken]' \
+curl -X POST 'http://localhost:1188/v2/translate' \
+--header 'Authorization: DeepL-Auth-Key [yourAccessToken] [yourAuthKey]' \
 --header 'Content-Type: application/json' \
 --data '{
   "text": [
@@ -82,6 +82,7 @@ curl -X POST 'http://127.0.0.1:1188/v2/translate' \
   ],
   "target_lang": "DE"
 }'
+# Please note that either `yourAccessToken` or `yourAuthKey` can be omitted.
 ```
 
 #### Requesting a token-protected **DeepLX API** instance using the `curl`

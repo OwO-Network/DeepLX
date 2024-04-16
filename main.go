@@ -2,7 +2,7 @@
  * @Author: Vincent Yang
  * @Date: 2023-07-01 21:45:34
  * @LastEditors: Vincent Young
- * @LastEditTime: 2024-04-16 14:47:43
+ * @LastEditTime: 2024-04-16 15:07:54
  * @FilePath: /DeepLX/main.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -434,21 +434,48 @@ func main() {
 
 	r.POST("/v2/translate", authMiddleware(cfg), func(c *gin.Context) {
 		authorizationHeader := c.GetHeader("Authorization")
-		parts := strings.Split(authorizationHeader, " ")
 		var authKey string
-		if len(parts) == 2 {
-			authKey = parts[1]
+
+		if strings.HasPrefix(authorizationHeader, "DeepL-Auth-Key") {
+			parts := strings.Split(authorizationHeader, " ")
+			if len(parts) >= 2 && strings.HasSuffix(parts[len(parts)-1], ":fx") {
+				authKey = parts[len(parts)-1]
+			}
 		}
-		translateText := c.PostForm("text")
-		targetLang := c.PostForm("target_lang")
+
+		var translateText string
+		var targetLang string
+
+		translateText = c.PostForm("text")
+		targetLang = c.PostForm("target_lang")
+
+		if translateText == "" || targetLang == "" {
+			var jsonData struct {
+				Text       []string `json:"text"`
+				TargetLang string   `json:"target_lang"`
+			}
+
+			if err := c.BindJSON(&jsonData); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"code":    http.StatusBadRequest,
+					"message": "Invalid request payload",
+				})
+				return
+			}
+
+			translateText = strings.Join(jsonData.Text, "\n")
+			targetLang = jsonData.TargetLang
+		}
+
 		result, err := translateByDeepLX("", targetLang, translateText, authKey)
 		if err != nil {
 			log.Fatalf("Translation failed: %s", err)
 		}
+
 		if result.Code == http.StatusOK {
 			c.JSON(http.StatusOK, gin.H{
-				"translations": []interface{}{
-					map[string]interface{}{
+				"translations": []map[string]interface{}{
+					{
 						"detected_source_language": result.SourceLang,
 						"text":                     result.Data,
 					},
