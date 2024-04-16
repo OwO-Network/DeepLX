@@ -1,8 +1,8 @@
 /*
  * @Author: Vincent Yang
  * @Date: 2023-07-01 21:45:34
- * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-04-13 18:50:25
+ * @LastEditors: Vincent Young
+ * @LastEditTime: 2024-04-16 14:47:43
  * @FilePath: /DeepLX/main.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -343,7 +343,22 @@ func authMiddleware(cfg *Config) gin.HandlerFunc {
 		if cfg.Token != "" {
 			providedTokenInQuery := c.Query("token")
 			providedTokenInHeader := c.GetHeader("Authorization")
-			if providedTokenInHeader != "Bearer "+cfg.Token && providedTokenInQuery != cfg.Token {
+
+			// Compatability with the Bearer token format
+			if providedTokenInHeader != "" {
+				parts := strings.Split(providedTokenInHeader, " ")
+				if len(parts) == 2 {
+					if parts[0] == "Bearer" || parts[0] == "DeepL-Auth-Key" {
+						providedTokenInHeader = parts[1]
+					} else {
+						providedTokenInHeader = ""
+					}
+				} else {
+					providedTokenInHeader = ""
+				}
+			}
+
+			if providedTokenInHeader != cfg.Token && providedTokenInQuery != cfg.Token {
 				c.JSON(http.StatusUnauthorized, gin.H{
 					"code":    http.StatusUnauthorized,
 					"message": "Invalid access token",
@@ -352,6 +367,7 @@ func authMiddleware(cfg *Config) gin.HandlerFunc {
 				return
 			}
 		}
+
 		c.Next()
 	}
 }

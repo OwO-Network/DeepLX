@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Young
- * @LastEditTime: 2023-11-28 00:24:20
+ * @LastEditTime: 2024-04-16 14:52:46
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -69,9 +69,23 @@
 - `-port` or `-p` : Listening port. Default is `1188`.
 - `-token` : Access token. If you have set it up, each request needs to include `Authorization` in the **Headers** or `token` parameter in the **URL Params**.
 - `-authkey` : DeepL Official `AuthKey`. If you have set it up, after the 429 response, the official AuthKey will be used for the request. If multiple authKeys are used simultaneously, they need to be separated by commas.
+- `/v2/translate` : This endpoint is fully compatible with the DeepL official API. When using this endpoint, please strictly adhere to the request styles outlined in the official DeepL documentation. Note that in this endpoint, please use `DeepL-Auth-Key $token` in the `Authorization`, which is actually the Access Token, not the official `Auth Key` of DeepL.
+
+```bash
+# Example of requesting a token-protected /v2/translate endpoint
+curl -X POST 'http://127.0.0.1:1188/v2/translate' \
+--header 'Authorization: DeepL-Auth-Key [yourAccessToken]' \
+--header 'Content-Type: application/json' \
+--data '{
+  "text": [
+    "Hello, world!"
+  ],
+  "target_lang": "DE"
+}'
+```
 
 #### Requesting a token-protected **DeepLX API** instance using the `curl`
-```
+```bash
 curl -X POST http://localhost:1188/translate \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer your_access_token" \
@@ -82,7 +96,7 @@ curl -X POST http://localhost:1188/translate \
 }'
 ```
 or
-```
+```bash
 curl -X POST http://localhost:1188/translate?token=your_access_token \
 -H "Content-Type: application/json" \
 -d '{
