@@ -103,7 +103,7 @@ func translateByDeepLX(sourceLang string, targetLang string, translateText strin
 	}
 
 	// Preparing the request data for the DeepL API
-	url := "https://api.deepl.com/jsonrpc"
+	url := "https://www2.deepl.com/jsonrpc"
 	id = id + 1
 	postData := initDeepLXData(sourceLang, targetLang)
 	text := Text{
@@ -264,7 +264,7 @@ func translateByDeepLXPro(sourceLang string, targetLang string, translateText st
 	}
 
 	// Preparing the request data for the DeepL API
-	url := "https://www2.deepl.com/jsonrpc"
+	url := "https://api.deepl.com/jsonrpc"
 	id = id + 1
 	postData := initDeepLXData(sourceLang, targetLang)
 	text := Text{
