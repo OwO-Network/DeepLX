@@ -1,8 +1,8 @@
 <!--
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
- * @LastEditors: Vincent Young
- * @LastEditTime: 2024-04-16 15:10:38
+ * @LastEditors: Vincent Yang
+ * @LastEditTime: 2024-04-23 00:47:59
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -69,7 +69,9 @@
 - `-port` or `-p` : Listening port. Default is `1188`.
 - `-token` : Access token. If you have set it up, each request needs to include `Authorization` in the **Headers** or `token` parameter in the **URL Params**.
 - `-authkey` : DeepL Official `AuthKey`. If you have set it up, after the 429 response, the official AuthKey will be used for the request. If multiple authKeys are used simultaneously, they need to be separated by commas.
+- `s`: `dl-session` is the cookie for a **DeepL Pro** account. If you set this, you will be able to use another endpoint `/v1/translate`, which can effectively avoid 429.
 - `/v2/translate` : This endpoint is fully compatible with the DeepL official API. When using this endpoint, please strictly adhere to the request styles outlined in the official DeepL documentation. Note that in this endpoint, please use `DeepL-Auth-Key $token` in the `Authorization`, which is actually the Access Token, not the official `Auth Key` of DeepL.
+
 
 #### Example of requesting a token-protected `/v2/translate` endpoint
 ```bash
@@ -113,13 +115,13 @@ curl -X POST http://localhost:1188/translate?token=your_access_token \
 docker run -itd -p 1188:1188 ghcr.io/owo-network/deeplx:latest
 
 # custom environment variables
-docker run -itd -p 1188:1188 -e "TOKEN=helloxxx" -e "AUTHKEY=xxxx:fx" ghcr.io/owo-network/deeplx:latest
+docker run -itd -p 1188:1188 -e "TOKEN=helloxxx" -e "AUTHKEY=xxxx:fx" -e "DL_SESSION=xxxxx" ghcr.io/owo-network/deeplx:latest
 
 # dockerhub
 docker run -itd -p 1188:1188 missuo/deeplx:latest
 
 # custom environment variables
-docker run -itd -p 1188:1188 -e "TOKEN=helloxxx" -e "AUTHKEY=xxxx:fx" missuo/deeplx:latest
+docker run -itd -p 1188:1188 -e "TOKEN=helloxxx" -e "AUTHKEY=xxxx:fx" -e "DL_SESSION=xxxxx" missuo/deeplx:latest
 ```
 
 ### Run with Docker Compose
@@ -131,6 +133,7 @@ wget https://raw.githubusercontent.com/OwO-Network/DeepLX/main/compose.yaml
 # environment:
   # - TOKEN=helloxxx
   # - AUTHKEY=xxxxxxx:fx
+  # - DL_SESSION=xxxxx
 # docker compose
 docker compose up -d
 ```

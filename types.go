@@ -1,9 +1,21 @@
+/*
+ * @Author: Vincent Yang
+ * @Date: 2024-03-20 15:43:57
+ * @LastEditors: Vincent Yang
+ * @LastEditTime: 2024-04-23 00:37:39
+ * @FilePath: /DeepLX/types.go
+ * @Telegram: https://t.me/missuo
+ * @GitHub: https://github.com/missuo
+ *
+ * Copyright © 2024 by Vincent, All Rights Reserved.
+ */
 package main
 
 type Config struct {
-	Port    int
-	Token   string
-	AuthKey string
+	Port      int
+	Token     string
+	AuthKey   string
+	DlSession string
 }
 
 type Lang struct {
