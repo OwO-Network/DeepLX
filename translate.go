@@ -307,7 +307,7 @@ func translateByDeepLXPro(sourceLang string, targetLang string, translateText st
 	request.Header.Set("Origin", "https://www.deepl.com")
 	request.Header.Set("Referer", "https://www.deepl.com")
 	request.Header.Set("Connection", "keep-alive")
-	request.Header.Set("Cookie", "dlsession="+dlSession)
+	request.Header.Set("Cookie", "dl_session="+dlSession)
 
 	// Making the HTTP request to the DeepL API
 	client := &http.Client{}
