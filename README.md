@@ -27,7 +27,9 @@
 
 ## How to use
 
-[Docs](https://deeplx.owo.network)
+> \[!TIP]
+>
+> Learn more about [📘 Using DeepLX](https://deeplx.owo.network) by checking it out.
 
 ## Discussion Group
 [Telegram Group](https://t.me/+8KDGHKJCxEVkNzll)
