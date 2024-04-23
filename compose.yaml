@@ -9,3 +9,4 @@ services:
     # environment:
       # - TOKEN=helloworld
       # - AUTHKEY=xxxxxxx:fx
+      # - DL_SESSION=xxxxxx
