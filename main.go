@@ -1,8 +1,8 @@
 /*
  * @Author: Vincent Yang
  * @Date: 2023-07-01 21:45:34
- * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-04-23 00:42:28
+ * @LastEditors: Vincent Young
+ * @LastEditTime: 2024-04-23 14:49:35
  * @FilePath: /DeepLX/main.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -126,6 +126,12 @@ func main() {
 		translateText := req.TransText
 
 		dlSession := cfg.DlSession
+
+		cookie := c.GetHeader("Cookie")
+		if cookie != "" {
+			dlSession = strings.Replace(cookie, "dl_session=", "", -1)
+		}
+
 		if dlSession == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"code":    http.StatusUnauthorized,
