@@ -25,9 +25,9 @@
 [6]: https://img.shields.io/docker/pulls/missuo/deeplx?logo=docker
 [7]: https://img.shields.io/github/v/release/OwO-Network/DeepLX?logo=smartthings
 
-## Docs
+## How to use
 
-[https://deeplx.owo.network](https://deeplx.owo.network)
+[Docs](https://deeplx.owo.network)
 
 ## Discussion Group
 [Telegram Group](https://t.me/+8KDGHKJCxEVkNzll)
