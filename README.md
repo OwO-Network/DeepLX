@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2022-10-18 07:32:29
  * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-04-23 00:47:59
+ * @LastEditTime: 2024-04-23 00:50:43
  * @FilePath: /DeepLX/README.md
  * @Telegram: https://t.me/missuo
  * 
@@ -69,7 +69,7 @@
 - `-port` or `-p` : Listening port. Default is `1188`.
 - `-token` : Access token. If you have set it up, each request needs to include `Authorization` in the **Headers** or `token` parameter in the **URL Params**.
 - `-authkey` : DeepL Official `AuthKey`. If you have set it up, after the 429 response, the official AuthKey will be used for the request. If multiple authKeys are used simultaneously, they need to be separated by commas.
-- `s`: `dl-session` is the cookie for a **DeepL Pro** account. If you set this, you will be able to use another endpoint `/v1/translate`, which can effectively avoid 429.
+- `-s`: `dl-session` is the cookie for a **DeepL Pro** account. If you set this, you will be able to use another endpoint `/v1/translate`, which can effectively avoid 429.
 - `/v2/translate` : This endpoint is fully compatible with the DeepL official API. When using this endpoint, please strictly adhere to the request styles outlined in the official DeepL documentation. Note that in this endpoint, please use `DeepL-Auth-Key $token` in the `Authorization`, which is actually the Access Token, not the official `Auth Key` of DeepL.
 
 
