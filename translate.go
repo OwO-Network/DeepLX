@@ -14,6 +14,24 @@ import (
 )
 
 func initDeepLXData(sourceLang string, targetLang string) *PostData {
+	hasRegionalVariant := false
+	targetLangParts := strings.Split(targetLang, "-")
+
+	// targetLang can be "en", "pt", "pt-PT", "pt-BR"
+	// targetLangCode is the first part of the targetLang, e.g. "pt" in "pt-PT"
+	targetLangCode := targetLangParts[0]
+	if len(targetLangParts) > 1 {
+		hasRegionalVariant = true
+	}
+
+	commonJobParams := CommonJobParams{
+		WasSpoken:    false,
+		TranscribeAS: "",
+	}
+	if hasRegionalVariant {
+		commonJobParams.RegionalVariant = targetLang
+	}
+
 	return &PostData{
 		Jsonrpc: "2.0",
 		Method:  "LMT_handle_texts",
@@ -21,13 +39,9 @@ func initDeepLXData(sourceLang string, targetLang string) *PostData {
 			Splitting: "newlines",
 			Lang: Lang{
 				SourceLangUserSelected: sourceLang,
-				TargetLang:             targetLang,
+				TargetLang:             targetLangCode,
 			},
-			CommonJobParams: CommonJobParams{
-				WasSpoken:    false,
-				TranscribeAS: "",
-				// RegionalVariant: "en-US",
-			},
+			CommonJobParams: commonJobParams,
 		},
 	}
 }

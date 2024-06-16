@@ -24,9 +24,9 @@ type Lang struct {
 }
 
 type CommonJobParams struct {
-	WasSpoken    bool   `json:"wasSpoken"`
-	TranscribeAS string `json:"transcribe_as"`
-	// RegionalVariant string `json:"regionalVariant"`
+	WasSpoken       bool   `json:"wasSpoken"`
+	TranscribeAS    string `json:"transcribe_as"`
+	RegionalVariant string `json:"regionalVariant,omitempty"`
 }
 
 type Params struct {
