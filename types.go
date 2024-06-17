@@ -2,7 +2,7 @@
  * @Author: Vincent Yang
  * @Date: 2024-03-20 15:43:57
  * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-04-23 00:37:39
+ * @LastEditTime: 2024-06-18 02:38:48
  * @FilePath: /DeepLX/types.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -16,6 +16,7 @@ type Config struct {
 	Token     string
 	AuthKey   string
 	DlSession string
+	Proxy     string
 }
 
 type Lang struct {
