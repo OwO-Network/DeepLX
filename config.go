@@ -2,7 +2,7 @@
  * @Author: Vincent Yang
  * @Date: 2024-04-23 00:39:03
  * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-04-23 00:43:43
+ * @LastEditTime: 2024-06-18 02:40:52
  * @FilePath: /DeepLX/config.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -47,6 +47,14 @@ func initConfig() *Config {
 	if cfg.AuthKey == "" {
 		if authKey, ok := os.LookupEnv("AUTHKEY"); ok {
 			cfg.AuthKey = authKey
+		}
+	}
+
+	// HTTP Proxy flag
+	flag.StringVar(&cfg.Proxy, "proxy", "", "set the proxy URL for HTTP requests")
+	if cfg.Proxy == "" {
+		if proxy, ok := os.LookupEnv("PROXY"); ok {
+			cfg.Proxy = proxy
 		}
 	}
 

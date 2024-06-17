@@ -1,8 +1,8 @@
 /*
  * @Author: Vincent Yang
  * @Date: 2023-07-01 21:45:34
- * @LastEditors: Vincent Young
- * @LastEditTime: 2024-04-23 14:49:35
+ * @LastEditors: Vincent Yang
+ * @LastEditTime: 2024-06-18 02:41:55
  * @FilePath: /DeepLX/main.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
@@ -62,6 +63,21 @@ func main() {
 	fmt.Printf("DeepL X has been successfully launched! Listening on 0.0.0.0:%v\n", cfg.Port)
 	fmt.Println("Developed by sjlleo <i@leo.moe> and missuo <me@missuo.me>.")
 
+	// Set Proxy
+	proxyURL := os.Getenv("PROXY")
+	if proxyURL == "" {
+		proxyURL = cfg.Proxy
+	}
+	if proxyURL != "" {
+		proxy, err := url.Parse(proxyURL)
+		if err != nil {
+			log.Fatalf("Failed to parse proxy URL: %v", err)
+		}
+		http.DefaultTransport = &http.Transport{
+			Proxy: http.ProxyURL(proxy),
+		}
+	}
+
 	if cfg.Token != "" {
 		fmt.Println("Access token is set.")
 	}
@@ -91,8 +107,9 @@ func main() {
 		targetLang := req.TargetLang
 		translateText := req.TransText
 		authKey := cfg.AuthKey
+		proxyURL := cfg.Proxy
 
-		result, err := translateByDeepLX(sourceLang, targetLang, translateText, authKey)
+		result, err := translateByDeepLX(sourceLang, targetLang, translateText, authKey, proxyURL)
 		if err != nil {
 			log.Fatalf("Translation failed: %s", err)
 		}
@@ -124,6 +141,7 @@ func main() {
 		sourceLang := req.SourceLang
 		targetLang := req.TargetLang
 		translateText := req.TransText
+		proxyURL := cfg.Proxy
 
 		dlSession := cfg.DlSession
 
@@ -146,7 +164,7 @@ func main() {
 			return
 		}
 
-		result, err := translateByDeepLXPro(sourceLang, targetLang, translateText, dlSession)
+		result, err := translateByDeepLXPro(sourceLang, targetLang, translateText, dlSession, proxyURL)
 		if err != nil {
 			log.Fatalf("Translation failed: %s", err)
 		}
@@ -174,6 +192,7 @@ func main() {
 	r.POST("/v2/translate", authMiddleware(cfg), func(c *gin.Context) {
 		authorizationHeader := c.GetHeader("Authorization")
 		var authKey string
+		proxyURL := cfg.Proxy
 
 		if strings.HasPrefix(authorizationHeader, "DeepL-Auth-Key") {
 			parts := strings.Split(authorizationHeader, " ")
@@ -206,7 +225,7 @@ func main() {
 			targetLang = jsonData.TargetLang
 		}
 
-		result, err := translateByDeepLX("", targetLang, translateText, authKey)
+		result, err := translateByDeepLX("", targetLang, translateText, authKey, proxyURL)
 		if err != nil {
 			log.Fatalf("Translation failed: %s", err)
 		}

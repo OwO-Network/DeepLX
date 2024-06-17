@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/abadojack/whatlanggo"
@@ -46,8 +47,8 @@ func initDeepLXData(sourceLang string, targetLang string) *PostData {
 	}
 }
 
-func translateByOfficialAPI(text string, sourceLang string, targetLang string, authKey string) (string, error) {
-	url := "https://api-free.deepl.com/v2/translate"
+func translateByOfficialAPI(text string, sourceLang string, targetLang string, authKey string, proxyURL string) (string, error) {
+	freeURL := "https://api-free.deepl.com/v2/translate"
 	textArray := strings.Split(text, "\n")
 
 	payload := PayloadAPI{
@@ -61,7 +62,7 @@ func translateByOfficialAPI(text string, sourceLang string, targetLang string, a
 		return "", err
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payloadBytes))
+	req, err := http.NewRequest("POST", freeURL, bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		return "", err
 	}
@@ -69,7 +70,20 @@ func translateByOfficialAPI(text string, sourceLang string, targetLang string, a
 	req.Header.Set("Authorization", "DeepL-Auth-Key "+authKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	var client *http.Client
+	if proxyURL != "" {
+		proxy, err := url.Parse(proxyURL)
+		if err != nil {
+			return "", err
+		}
+		transport := &http.Transport{
+			Proxy: http.ProxyURL(proxy),
+		}
+		client = &http.Client{Transport: transport}
+	} else {
+		client = &http.Client{}
+	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
@@ -97,7 +111,7 @@ func translateByOfficialAPI(text string, sourceLang string, targetLang string, a
 	return sb.String(), nil
 }
 
-func translateByDeepLX(sourceLang string, targetLang string, translateText string, authKey string) (DeepLXTranslationResult, error) {
+func translateByDeepLX(sourceLang string, targetLang string, translateText string, authKey string, proxyURL string) (DeepLXTranslationResult, error) {
 	id := getRandomNumber()
 	if sourceLang == "" {
 		lang := whatlanggo.DetectLang(translateText)
@@ -117,7 +131,7 @@ func translateByDeepLX(sourceLang string, targetLang string, translateText strin
 	}
 
 	// Preparing the request data for the DeepL API
-	url := "https://www2.deepl.com/jsonrpc"
+	www2URL := "https://www2.deepl.com/jsonrpc"
 	id = id + 1
 	postData := initDeepLXData(sourceLang, targetLang)
 	text := Text{
@@ -142,7 +156,7 @@ func translateByDeepLX(sourceLang string, targetLang string, translateText strin
 	// Creating a new HTTP POST request with the JSON data as the body
 	post_byte = []byte(postStr)
 	reader := bytes.NewReader(post_byte)
-	request, err := http.NewRequest("POST", url, reader)
+	request, err := http.NewRequest("POST", www2URL, reader)
 
 	if err != nil {
 		log.Println(err)
@@ -166,7 +180,23 @@ func translateByDeepLX(sourceLang string, targetLang string, translateText strin
 	request.Header.Set("Connection", "keep-alive")
 
 	// Making the HTTP request to the DeepL API
-	client := &http.Client{}
+	var client *http.Client
+	if proxyURL != "" {
+		proxy, err := url.Parse(proxyURL)
+		if err != nil {
+			return DeepLXTranslationResult{
+				Code:    http.StatusServiceUnavailable,
+				Message: "Uknown error",
+			}, nil
+		}
+		transport := &http.Transport{
+			Proxy: http.ProxyURL(proxy),
+		}
+		client = &http.Client{Transport: transport}
+	} else {
+		client = &http.Client{}
+	}
+
 	resp, err := client.Do(request)
 	if err != nil {
 		log.Println(err)
@@ -208,7 +238,7 @@ func translateByDeepLX(sourceLang string, targetLang string, translateText strin
 				continue
 			} else {
 				if validity {
-					translatedText, err := translateByOfficialAPI(translateText, sourceLang, targetLang, authKey)
+					translatedText, err := translateByOfficialAPI(translateText, sourceLang, targetLang, authKey, proxyURL)
 					if err != nil {
 						return DeepLXTranslationResult{
 							Code:    http.StatusTooManyRequests,
@@ -258,7 +288,7 @@ func translateByDeepLX(sourceLang string, targetLang string, translateText strin
 	}, nil
 }
 
-func translateByDeepLXPro(sourceLang string, targetLang string, translateText string, dlSession string) (DeepLXTranslationResult, error) {
+func translateByDeepLXPro(sourceLang string, targetLang string, translateText string, dlSession string, proxyURL string) (DeepLXTranslationResult, error) {
 	id := getRandomNumber()
 	if sourceLang == "" {
 		lang := whatlanggo.DetectLang(translateText)
@@ -278,7 +308,7 @@ func translateByDeepLXPro(sourceLang string, targetLang string, translateText st
 	}
 
 	// Preparing the request data for the DeepL API
-	url := "https://api.deepl.com/jsonrpc"
+	proURL := "https://api.deepl.com/jsonrpc"
 	id = id + 1
 	postData := initDeepLXData(sourceLang, targetLang)
 	text := Text{
@@ -303,7 +333,7 @@ func translateByDeepLXPro(sourceLang string, targetLang string, translateText st
 	// Creating a new HTTP POST request with the JSON data as the body
 	post_byte = []byte(postStr)
 	reader := bytes.NewReader(post_byte)
-	request, err := http.NewRequest("POST", url, reader)
+	request, err := http.NewRequest("POST", proURL, reader)
 
 	if err != nil {
 		log.Println(err)
@@ -324,7 +354,22 @@ func translateByDeepLXPro(sourceLang string, targetLang string, translateText st
 	request.Header.Set("Cookie", "dl_session="+dlSession)
 
 	// Making the HTTP request to the DeepL API
-	client := &http.Client{}
+	var client *http.Client
+	if proxyURL != "" {
+		proxy, err := url.Parse(proxyURL)
+		if err != nil {
+			return DeepLXTranslationResult{
+				Code:    http.StatusServiceUnavailable,
+				Message: "DeepL API request failed",
+			}, nil
+		}
+		transport := &http.Transport{
+			Proxy: http.ProxyURL(proxy),
+		}
+		client = &http.Client{Transport: transport}
+	} else {
+		client = &http.Client{}
+	}
 	resp, err := client.Do(request)
 	if err != nil {
 		log.Println(err)
