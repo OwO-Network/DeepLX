@@ -12,6 +12,7 @@
 package main
 
 type Config struct {
+	IP        string
 	Port      int
 	Token     string
 	AuthKey   string

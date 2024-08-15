@@ -60,7 +60,7 @@ func authMiddleware(cfg *Config) gin.HandlerFunc {
 func main() {
 	cfg := initConfig()
 
-	fmt.Printf("DeepL X has been successfully launched! Listening on 0.0.0.0:%v\n", cfg.Port)
+	fmt.Printf("DeepL X has been successfully launched! Listening on %v:%v\n", cfg.IP, cfg.Port)
 	fmt.Println("Developed by sjlleo <i@leo.moe> and missuo <me@missuo.me>.")
 
 	// Set Proxy
@@ -255,10 +255,5 @@ func main() {
 		})
 	})
 
-	envPort, ok := os.LookupEnv("PORT")
-	if ok {
-		r.Run(":" + envPort)
-	} else {
-		r.Run(fmt.Sprintf(":%v", cfg.Port))
-	}
+	r.Run(fmt.Sprintf("%v:%v", cfg.IP, cfg.Port))
 }
