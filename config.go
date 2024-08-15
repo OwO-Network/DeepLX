@@ -15,14 +15,26 @@ package main
 import (
 	"flag"
 	"os"
+	"fmt"
 )
 
 func initConfig() *Config {
 	cfg := &Config{
+		IP: "0.0.0.0",
 		Port: 1188,
 	}
 
+	// IP flag
+	if ip, ok := os.LookupEnv("IP"); ok && ip != "" {
+		cfg.IP = ip
+	}
+	flag.StringVar(&cfg.IP, "ip", cfg.IP, "set up the IP address to bind to")
+	flag.StringVar(&cfg.IP, "i", cfg.IP, "set up the IP address to bind to")
+
 	// Port flag
+	if port, ok := os.LookupEnv("PORT"); ok && port != "" {
+		fmt.Sscanf(port, "%d", &cfg.Port)
+	}
 	flag.IntVar(&cfg.Port, "port", cfg.Port, "set up the port to listen on")
 	flag.IntVar(&cfg.Port, "p", cfg.Port, "set up the port to listen on")
 
