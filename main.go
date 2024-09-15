@@ -2,7 +2,7 @@
  * @Author: Vincent Yang
  * @Date: 2023-07-01 21:45:34
  * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-06-18 02:41:55
+ * @LastEditTime: 2024-09-15 02:00:23
  * @FilePath: /DeepLX/main.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -106,10 +106,20 @@ func main() {
 		sourceLang := req.SourceLang
 		targetLang := req.TargetLang
 		translateText := req.TransText
+		tagHandling := req.TagHandling
+
 		authKey := cfg.AuthKey
 		proxyURL := cfg.Proxy
 
-		result, err := translateByDeepLX(sourceLang, targetLang, translateText, authKey, proxyURL)
+		if tagHandling != "" && tagHandling != "html" && tagHandling != "xml" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"code":    http.StatusBadRequest,
+				"message": "Invalid tag_handling value. Allowed values are 'html' and 'xml'.",
+			})
+			return
+		}
+
+		result, err := translateByDeepLX(sourceLang, targetLang, translateText, tagHandling, authKey, proxyURL)
 		if err != nil {
 			log.Fatalf("Translation failed: %s", err)
 		}
@@ -141,9 +151,18 @@ func main() {
 		sourceLang := req.SourceLang
 		targetLang := req.TargetLang
 		translateText := req.TransText
+		tagHandling := req.TagHandling
 		proxyURL := cfg.Proxy
 
 		dlSession := cfg.DlSession
+
+		if tagHandling != "" && tagHandling != "html" && tagHandling != "xml" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"code":    http.StatusBadRequest,
+				"message": "Invalid tag_handling value. Allowed values are 'html' and 'xml'.",
+			})
+			return
+		}
 
 		cookie := c.GetHeader("Cookie")
 		if cookie != "" {
@@ -164,7 +183,7 @@ func main() {
 			return
 		}
 
-		result, err := translateByDeepLXPro(sourceLang, targetLang, translateText, dlSession, proxyURL)
+		result, err := translateByDeepLXPro(sourceLang, targetLang, translateText, tagHandling, dlSession, proxyURL)
 		if err != nil {
 			log.Fatalf("Translation failed: %s", err)
 		}
@@ -225,7 +244,7 @@ func main() {
 			targetLang = jsonData.TargetLang
 		}
 
-		result, err := translateByDeepLX("", targetLang, translateText, authKey, proxyURL)
+		result, err := translateByDeepLX("", targetLang, translateText, "", authKey, proxyURL)
 		if err != nil {
 			log.Fatalf("Translation failed: %s", err)
 		}

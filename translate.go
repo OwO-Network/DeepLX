@@ -111,7 +111,7 @@ func translateByOfficialAPI(text string, sourceLang string, targetLang string, a
 	return sb.String(), nil
 }
 
-func translateByDeepLX(sourceLang string, targetLang string, translateText string, authKey string, proxyURL string) (DeepLXTranslationResult, error) {
+func translateByDeepLX(sourceLang string, targetLang string, translateText string, tagHandling string, authKey string, proxyURL string) (DeepLXTranslationResult, error) {
 	id := getRandomNumber()
 	if sourceLang == "" {
 		lang := whatlanggo.DetectLang(translateText)
@@ -141,6 +141,10 @@ func translateByDeepLX(sourceLang string, targetLang string, translateText strin
 	postData.ID = id
 	postData.Params.Texts = append(postData.Params.Texts, text)
 	postData.Params.Timestamp = getTimeStamp(getICount(translateText))
+
+	if tagHandling == "html" || tagHandling == "xml" {
+		postData.Params.TagHandling = tagHandling
+	}
 
 	// Marshalling the request data to JSON and making necessary string replacements
 	post_byte, _ := json.Marshal(postData)
@@ -288,7 +292,7 @@ func translateByDeepLX(sourceLang string, targetLang string, translateText strin
 	}, nil
 }
 
-func translateByDeepLXPro(sourceLang string, targetLang string, translateText string, dlSession string, proxyURL string) (DeepLXTranslationResult, error) {
+func translateByDeepLXPro(sourceLang string, targetLang string, translateText string, tagHandling string, dlSession string, proxyURL string) (DeepLXTranslationResult, error) {
 	id := getRandomNumber()
 	if sourceLang == "" {
 		lang := whatlanggo.DetectLang(translateText)
@@ -318,6 +322,10 @@ func translateByDeepLXPro(sourceLang string, targetLang string, translateText st
 	postData.ID = id
 	postData.Params.Texts = append(postData.Params.Texts, text)
 	postData.Params.Timestamp = getTimeStamp(getICount(translateText))
+
+	if tagHandling == "html" || tagHandling == "xml" {
+		postData.Params.TagHandling = tagHandling
+	}
 
 	// Marshalling the request data to JSON and making necessary string replacements
 	post_byte, _ := json.Marshal(postData)

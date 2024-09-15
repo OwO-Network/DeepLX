@@ -2,7 +2,7 @@
  * @Author: Vincent Yang
  * @Date: 2024-03-20 15:43:57
  * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-06-18 02:38:48
+ * @LastEditTime: 2024-09-15 01:54:05
  * @FilePath: /DeepLX/types.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -37,6 +37,7 @@ type Params struct {
 	Lang            Lang            `json:"lang"`
 	Timestamp       int64           `json:"timestamp"`
 	CommonJobParams CommonJobParams `json:"commonJobParams"`
+	TagHandling     string          `json:"tag_handling"`
 }
 
 type Text struct {
@@ -52,15 +53,17 @@ type PostData struct {
 }
 
 type PayloadFree struct {
-	TransText  string `json:"text"`
-	SourceLang string `json:"source_lang"`
-	TargetLang string `json:"target_lang"`
+	TransText   string `json:"text"`
+	SourceLang  string `json:"source_lang"`
+	TargetLang  string `json:"target_lang"`
+	TagHandling string `json:"tag_handling"`
 }
 
 type PayloadAPI struct {
-	Text       []string `json:"text"`
-	TargetLang string   `json:"target_lang"`
-	SourceLang string   `json:"source_lang"`
+	Text        []string `json:"text"`
+	TargetLang  string   `json:"target_lang"`
+	SourceLang  string   `json:"source_lang"`
+	TagHandling string   `json:"tag_handling"`
 }
 
 type Translation struct {
