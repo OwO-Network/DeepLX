@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2024-09-16 11:59:24
  * @LastEditors: Vincent Young
- * @LastEditTime: 2024-09-16 12:06:21
+ * @LastEditTime: 2024-09-16 12:09:37
  * @FilePath: /DeepLX/translate/translate.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -59,7 +59,7 @@ func initDeepLXData(sourceLang string, targetLang string) *PostData {
 	}
 }
 
-func TranslateByDeepLX(sourceLang string, targetLang string, translateText string, tagHandling string, authKey string, proxyURL string) (DeepLXTranslationResult, error) {
+func TranslateByDeepLX(sourceLang string, targetLang string, translateText string, tagHandling string, proxyURL string) (DeepLXTranslationResult, error) {
 	id := getRandomNumber()
 	if sourceLang == "" {
 		lang := whatlanggo.DetectLang(translateText)
