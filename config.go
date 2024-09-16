@@ -1,8 +1,8 @@
 /*
  * @Author: Vincent Yang
  * @Date: 2024-04-23 00:39:03
- * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-06-18 02:40:52
+ * @LastEditors: Vincent Young
+ * @LastEditTime: 2024-09-16 12:02:15
  * @FilePath: /DeepLX/config.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -14,13 +14,22 @@ package main
 
 import (
 	"flag"
-	"os"
 	"fmt"
+	"os"
 )
+
+type Config struct {
+	IP        string
+	Port      int
+	Token     string
+	AuthKey   string
+	DlSession string
+	Proxy     string
+}
 
 func initConfig() *Config {
 	cfg := &Config{
-		IP: "0.0.0.0",
+		IP:   "0.0.0.0",
 		Port: 1188,
 	}
 

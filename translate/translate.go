@@ -1,4 +1,16 @@
-package main
+/*
+ * @Author: Vincent Young
+ * @Date: 2024-09-16 11:59:24
+ * @LastEditors: Vincent Young
+ * @LastEditTime: 2024-09-16 12:06:21
+ * @FilePath: /DeepLX/translate/translate.go
+ * @Telegram: https://t.me/missuo
+ * @GitHub: https://github.com/missuo
+ *
+ * Copyright © 2024 by Vincent, All Rights Reserved.
+ */
+
+package translate
 
 import (
 	"bytes"
@@ -47,71 +59,7 @@ func initDeepLXData(sourceLang string, targetLang string) *PostData {
 	}
 }
 
-func translateByOfficialAPI(text string, sourceLang string, targetLang string, authKey string, proxyURL string) (string, error) {
-	freeURL := "https://api-free.deepl.com/v2/translate"
-	textArray := strings.Split(text, "\n")
-
-	payload := PayloadAPI{
-		Text:       textArray,
-		TargetLang: targetLang,
-		SourceLang: sourceLang,
-	}
-
-	payloadBytes, err := json.Marshal(payload)
-	if err != nil {
-		return "", err
-	}
-
-	req, err := http.NewRequest("POST", freeURL, bytes.NewBuffer(payloadBytes))
-	if err != nil {
-		return "", err
-	}
-
-	req.Header.Set("Authorization", "DeepL-Auth-Key "+authKey)
-	req.Header.Set("Content-Type", "application/json")
-
-	var client *http.Client
-	if proxyURL != "" {
-		proxy, err := url.Parse(proxyURL)
-		if err != nil {
-			return "", err
-		}
-		transport := &http.Transport{
-			Proxy: http.ProxyURL(proxy),
-		}
-		client = &http.Client{Transport: transport}
-	} else {
-		client = &http.Client{}
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	// Parsing the response
-	var translationResponse TranslationResponse
-	err = json.Unmarshal(body, &translationResponse)
-	if err != nil {
-		return "", err
-	}
-
-	// Concatenating the translations
-	var sb strings.Builder
-	for _, translation := range translationResponse.Translations {
-		sb.WriteString(translation.Text)
-	}
-
-	return sb.String(), nil
-}
-
-func translateByDeepLX(sourceLang string, targetLang string, translateText string, tagHandling string, authKey string, proxyURL string) (DeepLXTranslationResult, error) {
+func TranslateByDeepLX(sourceLang string, targetLang string, translateText string, tagHandling string, authKey string, proxyURL string) (DeepLXTranslationResult, error) {
 	id := getRandomNumber()
 	if sourceLang == "" {
 		lang := whatlanggo.DetectLang(translateText)
@@ -233,66 +181,38 @@ func translateByDeepLX(sourceLang string, targetLang string, translateText strin
 			Message: "Invalid target language",
 		}, nil
 	}
-
-	if resp.StatusCode == http.StatusTooManyRequests && authKey != "" {
-		authKeyArray := strings.Split(authKey, ",")
-		for _, authKey := range authKeyArray {
-			validity, err := checkUsageAuthKey(authKey)
-			if err != nil {
-				continue
-			} else {
-				if validity {
-					translatedText, err := translateByOfficialAPI(translateText, sourceLang, targetLang, authKey, proxyURL)
-					if err != nil {
-						return DeepLXTranslationResult{
-							Code:    http.StatusTooManyRequests,
-							Message: "Too Many Requests",
-						}, nil
-					}
-					return DeepLXTranslationResult{
-						Code:       http.StatusOK,
-						Message:    "Success",
-						ID:         1000000,
-						Data:       translatedText,
-						SourceLang: sourceLang,
-						TargetLang: targetLang,
-						Method:     "Official API",
-					}, nil
-				}
-			}
-
-		}
-	} else {
-		var alternatives []string
-		res.Get("result.texts.0.alternatives").ForEach(func(key, value gjson.Result) bool {
-			alternatives = append(alternatives, value.Get("text").String())
-			return true
-		})
-		if res.Get("result.texts.0.text").String() == "" {
-			return DeepLXTranslationResult{
-				Code:    http.StatusServiceUnavailable,
-				Message: "Translation failed, API returns an empty result.",
-			}, nil
-		} else {
-			return DeepLXTranslationResult{
-				Code:         http.StatusOK,
-				ID:           id,
-				Message:      "Success",
-				Data:         res.Get("result.texts.0.text").String(),
-				Alternatives: alternatives,
-				SourceLang:   sourceLang,
-				TargetLang:   targetLang,
-				Method:       "Free",
-			}, nil
-		}
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return DeepLXTranslationResult{
+			Code:    http.StatusTooManyRequests,
+			Message: "Too Many Requests",
+		}, nil
 	}
-	return DeepLXTranslationResult{
-		Code:    http.StatusServiceUnavailable,
-		Message: "Uknown error",
-	}, nil
+
+	var alternatives []string
+	res.Get("result.texts.0.alternatives").ForEach(func(key, value gjson.Result) bool {
+		alternatives = append(alternatives, value.Get("text").String())
+		return true
+	})
+	if res.Get("result.texts.0.text").String() == "" {
+		return DeepLXTranslationResult{
+			Code:    http.StatusServiceUnavailable,
+			Message: "Translation failed, API returns an empty result.",
+		}, nil
+	} else {
+		return DeepLXTranslationResult{
+			Code:         http.StatusOK,
+			ID:           id,
+			Message:      "Success",
+			Data:         res.Get("result.texts.0.text").String(),
+			Alternatives: alternatives,
+			SourceLang:   sourceLang,
+			TargetLang:   targetLang,
+			Method:       "Free",
+		}, nil
+	}
 }
 
-func translateByDeepLXPro(sourceLang string, targetLang string, translateText string, tagHandling string, dlSession string, proxyURL string) (DeepLXTranslationResult, error) {
+func TranslateByDeepLXPro(sourceLang string, targetLang string, translateText string, tagHandling string, dlSession string, proxyURL string) (DeepLXTranslationResult, error) {
 	id := getRandomNumber()
 	if sourceLang == "" {
 		lang := whatlanggo.DetectLang(translateText)

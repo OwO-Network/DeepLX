@@ -1,14 +1,15 @@
 /*
  * @Author: Vincent Yang
  * @Date: 2023-07-01 21:45:34
- * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-09-15 02:00:23
+ * @LastEditors: Vincent Young
+ * @LastEditTime: 2024-09-16 12:07:15
  * @FilePath: /DeepLX/main.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
  *
  * Copyright © 2024 by Vincent, All Rights Reserved.
  */
+
 package main
 
 import (
@@ -19,6 +20,7 @@ import (
 	"os"
 	"strings"
 
+	translate "github.com/OwO-Network/DeepLX/translate"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -55,6 +57,20 @@ func authMiddleware(cfg *Config) gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+type PayloadFree struct {
+	TransText   string `json:"text"`
+	SourceLang  string `json:"source_lang"`
+	TargetLang  string `json:"target_lang"`
+	TagHandling string `json:"tag_handling"`
+}
+
+type PayloadAPI struct {
+	Text        []string `json:"text"`
+	TargetLang  string   `json:"target_lang"`
+	SourceLang  string   `json:"source_lang"`
+	TagHandling string   `json:"tag_handling"`
 }
 
 func main() {
@@ -119,7 +135,7 @@ func main() {
 			return
 		}
 
-		result, err := translateByDeepLX(sourceLang, targetLang, translateText, tagHandling, authKey, proxyURL)
+		result, err := translate.TranslateByDeepLX(sourceLang, targetLang, translateText, tagHandling, authKey, proxyURL)
 		if err != nil {
 			log.Fatalf("Translation failed: %s", err)
 		}
@@ -183,7 +199,7 @@ func main() {
 			return
 		}
 
-		result, err := translateByDeepLXPro(sourceLang, targetLang, translateText, tagHandling, dlSession, proxyURL)
+		result, err := translate.TranslateByDeepLXPro(sourceLang, targetLang, translateText, tagHandling, dlSession, proxyURL)
 		if err != nil {
 			log.Fatalf("Translation failed: %s", err)
 		}
@@ -244,7 +260,7 @@ func main() {
 			targetLang = jsonData.TargetLang
 		}
 
-		result, err := translateByDeepLX("", targetLang, translateText, "", authKey, proxyURL)
+		result, err := translate.TranslateByDeepLX("", targetLang, translateText, "", authKey, proxyURL)
 		if err != nil {
 			log.Fatalf("Translation failed: %s", err)
 		}
