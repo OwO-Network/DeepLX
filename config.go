@@ -63,14 +63,6 @@ func initConfig() *Config {
 		}
 	}
 
-	// DeepL Official Authentication key flag
-	flag.StringVar(&cfg.AuthKey, "authkey", "", "The authentication key for DeepL API")
-	if cfg.AuthKey == "" {
-		if authKey, ok := os.LookupEnv("AUTHKEY"); ok {
-			cfg.AuthKey = authKey
-		}
-	}
-
 	// HTTP Proxy flag
 	flag.StringVar(&cfg.Proxy, "proxy", "", "set the proxy URL for HTTP requests")
 	if cfg.Proxy == "" {
