@@ -1,6 +1,4 @@
-# syntax=docker/dockerfile:1
-
-FROM golang:1.22 AS builder
+FROM golang:1.23.1 AS builder
 WORKDIR /go/src/github.com/OwO-Network/DeepLX
 COPY . .
 RUN go get -d -v ./
