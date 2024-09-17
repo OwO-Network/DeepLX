@@ -1,8 +1,8 @@
 /*
  * @Author: Vincent Yang
  * @Date: 2024-04-23 00:39:03
- * @LastEditors: Vincent Young
- * @LastEditTime: 2024-09-16 12:02:15
+ * @LastEditors: Vincent Yang
+ * @LastEditTime: 2024-09-17 19:34:32
  * @FilePath: /DeepLX/config.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -22,7 +22,6 @@ type Config struct {
 	IP        string
 	Port      int
 	Token     string
-	AuthKey   string
 	DlSession string
 	Proxy     string
 }

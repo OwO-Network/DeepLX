@@ -8,5 +8,4 @@ services:
       - "1188:1188"
     # environment:
       # - TOKEN=helloworld
-      # - AUTHKEY=xxxxxxx:fx
       # - DL_SESSION=xxxxxx
