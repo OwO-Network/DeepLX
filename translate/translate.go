@@ -138,7 +138,7 @@ func TranslateByDeepLX(sourceLang string, targetLang string, translateText strin
 		if err != nil {
 			return DeepLXTranslationResult{
 				Code:    http.StatusServiceUnavailable,
-				Message: "Uknown error",
+				Message: "Unknown error",
 			}, nil
 		}
 		transport := &http.Transport{
