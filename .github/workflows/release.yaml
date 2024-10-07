@@ -15,7 +15,7 @@ jobs:
 
       - uses: actions/setup-go@v4
         with:
-          go-version: "1.22"
+          go-version: "1.23.2"
 
       - run: bash .cross_compile.sh
 
