@@ -176,9 +176,13 @@ func main() {
 			return
 		}
 
-		cookie := c.GetHeader("Cookie")
-		if cookie != "" {
-			dlSession = strings.Replace(cookie, "dl_session=", "", -1)
+		if cookie := c.GetHeader("Cookie"); cookie != "" {
+			for _, part := range strings.Split(cookie, ";") {
+				if strings.HasPrefix(part, "dl_session=") {
+					dlSession = strings.TrimPrefix(part, "dl_session=")
+					break
+				}
+			}
 		}
 
 		if dlSession == "" {
