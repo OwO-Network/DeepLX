@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2024-09-16 11:59:24
  * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-11-01 00:42:43
+ * @LastEditTime: 2024-11-01 12:45:44
  * @FilePath: /DeepLX/translate/translate.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -161,6 +161,13 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 		})
 	}
 
+	hasRegionalVariant := false
+	targetLangParts := strings.Split(targetLang, "-")
+	targetLangCode := targetLangParts[0]
+	if len(targetLangParts) > 1 {
+		hasRegionalVariant = true
+	}
+
 	// Prepare translation request
 	id := getRandomNumber()
 	postData := &PostData{
@@ -169,17 +176,19 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 		ID:      id,
 		Params: Params{
 			CommonJobParams: CommonJobParams{
-				Mode: "translate",
+				Mode:            "translate",
+				RegionalVariant: map[bool]string{true: targetLang, false: ""}[hasRegionalVariant],
 			},
 			Lang: Lang{
 				SourceLangComputed: strings.ToUpper(sourceLang),
-				TargetLang:         strings.ToUpper(targetLang),
+				TargetLang:         strings.ToUpper(targetLangCode),
 			},
 			Jobs:      jobs,
 			Priority:  1,
 			Timestamp: getTimeStamp(getICount(text)),
 		},
 	}
+	fmt.Println(postData)
 
 	// Make translation request
 	result, err := makeRequest(postData, "LMT_handle_jobs", proxyURL)

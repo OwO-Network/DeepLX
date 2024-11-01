@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2024-09-16 11:59:24
  * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-11-01 00:39:49
+ * @LastEditTime: 2024-11-01 12:47:47
  * @FilePath: /DeepLX/translate/types.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -21,7 +21,8 @@ type Lang struct {
 
 // CommonJobParams represents common parameters for translation jobs
 type CommonJobParams struct {
-	Mode string `json:"mode"`
+	Mode            string `json:"mode"`
+	RegionalVariant string `json:"regionalVariant"`
 }
 
 // Sentence represents a sentence in the translation request
