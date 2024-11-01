@@ -2,7 +2,7 @@
  * @Author: Vincent Yang
  * @Date: 2023-07-01 21:45:34
  * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-11-01 00:42:58
+ * @LastEditTime: 2024-11-01 13:04:50
  * @FilePath: /DeepLX/main.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -131,7 +131,7 @@ func main() {
 			return
 		}
 
-		result, err := translate.TranslateByDeepLX(sourceLang, targetLang, translateText, tagHandling, proxyURL)
+		result, err := translate.TranslateByDeepLX(sourceLang, targetLang, translateText, tagHandling, proxyURL, "")
 		if err != nil {
 			log.Fatalf("Translation failed: %s", err)
 		}
@@ -156,68 +156,68 @@ func main() {
 	})
 
 	// Pro API endpoint, Pro Account required
-	// r.POST("/v1/translate", authMiddleware(cfg), func(c *gin.Context) {
-	// 	req := PayloadFree{}
-	// 	c.BindJSON(&req)
+	r.POST("/v1/translate", authMiddleware(cfg), func(c *gin.Context) {
+		req := PayloadFree{}
+		c.BindJSON(&req)
 
-	// 	sourceLang := req.SourceLang
-	// 	targetLang := req.TargetLang
-	// 	translateText := req.TransText
-	// 	tagHandling := req.TagHandling
-	// 	proxyURL := cfg.Proxy
+		sourceLang := req.SourceLang
+		targetLang := req.TargetLang
+		translateText := req.TransText
+		tagHandling := req.TagHandling
+		proxyURL := cfg.Proxy
 
-	// 	dlSession := cfg.DlSession
+		dlSession := cfg.DlSession
 
-	// 	if tagHandling != "" && tagHandling != "html" && tagHandling != "xml" {
-	// 		c.JSON(http.StatusBadRequest, gin.H{
-	// 			"code":    http.StatusBadRequest,
-	// 			"message": "Invalid tag_handling value. Allowed values are 'html' and 'xml'.",
-	// 		})
-	// 		return
-	// 	}
+		if tagHandling != "" && tagHandling != "html" && tagHandling != "xml" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"code":    http.StatusBadRequest,
+				"message": "Invalid tag_handling value. Allowed values are 'html' and 'xml'.",
+			})
+			return
+		}
 
-	// 	cookie := c.GetHeader("Cookie")
-	// 	if cookie != "" {
-	// 		dlSession = strings.Replace(cookie, "dl_session=", "", -1)
-	// 	}
+		cookie := c.GetHeader("Cookie")
+		if cookie != "" {
+			dlSession = strings.Replace(cookie, "dl_session=", "", -1)
+		}
 
-	// 	if dlSession == "" {
-	// 		c.JSON(http.StatusUnauthorized, gin.H{
-	// 			"code":    http.StatusUnauthorized,
-	// 			"message": "No dl_session Found",
-	// 		})
-	// 		return
-	// 	} else if strings.Contains(dlSession, ".") {
-	// 		c.JSON(http.StatusUnauthorized, gin.H{
-	// 			"code":    http.StatusUnauthorized,
-	// 			"message": "Your account is not a Pro account. Please upgrade your account or switch to a different account.",
-	// 		})
-	// 		return
-	// 	}
+		if dlSession == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"code":    http.StatusUnauthorized,
+				"message": "No dl_session Found",
+			})
+			return
+		} else if strings.Contains(dlSession, ".") {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"code":    http.StatusUnauthorized,
+				"message": "Your account is not a Pro account. Please upgrade your account or switch to a different account.",
+			})
+			return
+		}
 
-	// 	result, err := translate.TranslateByDeepLXPro(sourceLang, targetLang, translateText, tagHandling, dlSession, proxyURL)
-	// 	if err != nil {
-	// 		log.Fatalf("Translation failed: %s", err)
-	// 	}
+		result, err := translate.TranslateByDeepLX(sourceLang, targetLang, translateText, tagHandling, proxyURL, dlSession)
+		if err != nil {
+			log.Fatalf("Translation failed: %s", err)
+		}
 
-	// 	if result.Code == http.StatusOK {
-	// 		c.JSON(http.StatusOK, gin.H{
-	// 			"code":         http.StatusOK,
-	// 			"id":           result.ID,
-	// 			"data":         result.Data,
-	// 			"alternatives": result.Alternatives,
-	// 			"source_lang":  result.SourceLang,
-	// 			"target_lang":  result.TargetLang,
-	// 			"method":       result.Method,
-	// 		})
-	// 	} else {
-	// 		c.JSON(result.Code, gin.H{
-	// 			"code":    result.Code,
-	// 			"message": result.Message,
-	// 		})
+		if result.Code == http.StatusOK {
+			c.JSON(http.StatusOK, gin.H{
+				"code":         http.StatusOK,
+				"id":           result.ID,
+				"data":         result.Data,
+				"alternatives": result.Alternatives,
+				"source_lang":  result.SourceLang,
+				"target_lang":  result.TargetLang,
+				"method":       result.Method,
+			})
+		} else {
+			c.JSON(result.Code, gin.H{
+				"code":    result.Code,
+				"message": result.Message,
+			})
 
-	// 	}
-	// })
+		}
+	})
 
 	// Free API endpoint, Consistent with the official API format
 	r.POST("/v2/translate", authMiddleware(cfg), func(c *gin.Context) {
@@ -247,7 +247,7 @@ func main() {
 			targetLang = jsonData.TargetLang
 		}
 
-		result, err := translate.TranslateByDeepLX("", targetLang, translateText, "", proxyURL)
+		result, err := translate.TranslateByDeepLX("", targetLang, translateText, "", proxyURL, "")
 		if err != nil {
 			log.Fatalf("Translation failed: %s", err)
 		}
