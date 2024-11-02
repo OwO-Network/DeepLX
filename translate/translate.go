@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2024-09-16 11:59:24
  * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-11-01 13:12:25
+ * @LastEditTime: 2024-11-01 23:19:11
  * @FilePath: /DeepLX/translate/translate.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -93,20 +93,6 @@ func makeRequest(postData *PostData, urlMethod string, proxyURL string, dlSessio
 	}
 	defer resp.Body.Close()
 
-	// Check status code before processing response
-	if resp.StatusCode != http.StatusOK {
-		switch resp.StatusCode {
-		case http.StatusTooManyRequests:
-			return gjson.Result{}, fmt.Errorf("too many requests")
-		case http.StatusUnauthorized:
-			return gjson.Result{}, fmt.Errorf("unauthorized")
-		case http.StatusForbidden:
-			return gjson.Result{}, fmt.Errorf("forbidden")
-		default:
-			return gjson.Result{}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-		}
-	}
-
 	var bodyReader io.Reader
 	if resp.Header.Get("Content-Encoding") == "br" {
 		bodyReader = brotli.NewReader(resp.Body)
@@ -195,22 +181,23 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 	}
 
 	hasRegionalVariant := false
+	targetLangCode := targetLang
 	targetLangParts := strings.Split(targetLang, "-")
-	targetLangCode := targetLangParts[0]
 	if len(targetLangParts) > 1 {
+		targetLangCode = targetLangParts[0]
 		hasRegionalVariant = true
 	}
 
 	// Prepare translation request
 	id := getRandomNumber()
+
 	postData := &PostData{
 		Jsonrpc: "2.0",
 		Method:  "LMT_handle_jobs",
 		ID:      id,
 		Params: Params{
 			CommonJobParams: CommonJobParams{
-				Mode:            "translate",
-				RegionalVariant: map[bool]string{true: targetLang, false: ""}[hasRegionalVariant],
+				Mode: "translate",
 			},
 			Lang: Lang{
 				SourceLangComputed: strings.ToUpper(sourceLang),
@@ -220,6 +207,27 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 			Priority:  1,
 			Timestamp: getTimeStamp(getICount(text)),
 		},
+	}
+
+	if hasRegionalVariant {
+		postData = &PostData{
+			Jsonrpc: "2.0",
+			Method:  "LMT_handle_jobs",
+			ID:      id,
+			Params: Params{
+				CommonJobParams: CommonJobParams{
+					Mode:            "translate",
+					RegionalVariant: map[bool]string{true: targetLang, false: ""}[hasRegionalVariant],
+				},
+				Lang: Lang{
+					SourceLangComputed: strings.ToUpper(sourceLang),
+					TargetLang:         strings.ToUpper(targetLangCode),
+				},
+				Jobs:      jobs,
+				Priority:  1,
+				Timestamp: getTimeStamp(getICount(text)),
+			},
+		}
 	}
 
 	// Make translation request
