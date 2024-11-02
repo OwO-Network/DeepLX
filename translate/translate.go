@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2024-09-16 11:59:24
  * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-11-01 00:42:43
+ * @LastEditTime: 2024-11-01 13:12:25
  * @FilePath: /DeepLX/translate/translate.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -27,7 +27,7 @@ import (
 const baseURL = "https://www2.deepl.com/jsonrpc"
 
 // makeRequest makes an HTTP request to DeepL API
-func makeRequest(postData *PostData, urlMethod string, proxyURL string) (gjson.Result, error) {
+func makeRequest(postData *PostData, urlMethod string, proxyURL string, dlSession string) (gjson.Result, error) {
 	urlFull := fmt.Sprintf("%s?client=chrome-extension,1.28.0&method=%s", baseURL, urlMethod)
 
 	postStr := formatPostString(postData)
@@ -36,23 +36,43 @@ func makeRequest(postData *PostData, urlMethod string, proxyURL string) (gjson.R
 		return gjson.Result{}, err
 	}
 
-	// Set headers
-	req.Header = http.Header{
-		"Accept":          []string{"*/*"},
-		"Accept-Language": []string{"en-US,en;q=0.9,zh-CN;q=0.8,zh-TW;q=0.7,zh-HK;q=0.6,zh;q=0.5"},
-		"Authorization":   []string{"None"},
-		"Cache-Control":   []string{"no-cache"},
-		"Content-Type":    []string{"application/json"},
-		"DNT":             []string{"1"},
-		"Origin":          []string{"chrome-extension://cofdbpoegempjloogbagkncekinflcnj"},
-		"Pragma":          []string{"no-cache"},
-		"Priority":        []string{"u=1, i"},
-		"Referer":         []string{"https://www.deepl.com/"},
-		"Sec-Fetch-Dest":  []string{"empty"},
-		"Sec-Fetch-Mode":  []string{"cors"},
-		"Sec-Fetch-Site":  []string{"none"},
-		"Sec-GPC":         []string{"1"},
-		"User-Agent":      []string{"DeepLBrowserExtension/1.28.0 Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"},
+	if dlSession != "" {
+		req.Header = http.Header{
+			"Accept":          []string{"*/*"},
+			"Accept-Language": []string{"en-US,en;q=0.9,zh-CN;q=0.8,zh-TW;q=0.7,zh-HK;q=0.6,zh;q=0.5"},
+			"Authorization":   []string{"None"},
+			"Cache-Control":   []string{"no-cache"},
+			"Content-Type":    []string{"application/json"},
+			"DNT":             []string{"1"},
+			"Origin":          []string{"chrome-extension://cofdbpoegempjloogbagkncekinflcnj"},
+			"Pragma":          []string{"no-cache"},
+			"Priority":        []string{"u=1, i"},
+			"Referer":         []string{"https://www.deepl.com/"},
+			"Sec-Fetch-Dest":  []string{"empty"},
+			"Sec-Fetch-Mode":  []string{"cors"},
+			"Sec-Fetch-Site":  []string{"none"},
+			"Sec-GPC":         []string{"1"},
+			"User-Agent":      []string{"DeepLBrowserExtension/1.28.0 Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"},
+			"Cookie":          []string{"dl_session=" + dlSession},
+		}
+	} else {
+		req.Header = http.Header{
+			"Accept":          []string{"*/*"},
+			"Accept-Language": []string{"en-US,en;q=0.9,zh-CN;q=0.8,zh-TW;q=0.7,zh-HK;q=0.6,zh;q=0.5"},
+			"Authorization":   []string{"None"},
+			"Cache-Control":   []string{"no-cache"},
+			"Content-Type":    []string{"application/json"},
+			"DNT":             []string{"1"},
+			"Origin":          []string{"chrome-extension://cofdbpoegempjloogbagkncekinflcnj"},
+			"Pragma":          []string{"no-cache"},
+			"Priority":        []string{"u=1, i"},
+			"Referer":         []string{"https://www.deepl.com/"},
+			"Sec-Fetch-Dest":  []string{"empty"},
+			"Sec-Fetch-Mode":  []string{"cors"},
+			"Sec-Fetch-Site":  []string{"none"},
+			"Sec-GPC":         []string{"1"},
+			"User-Agent":      []string{"DeepLBrowserExtension/1.28.0 Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"},
+		}
 	}
 
 	// Setup client with proxy if provided
@@ -73,6 +93,20 @@ func makeRequest(postData *PostData, urlMethod string, proxyURL string) (gjson.R
 	}
 	defer resp.Body.Close()
 
+	// Check status code before processing response
+	if resp.StatusCode != http.StatusOK {
+		switch resp.StatusCode {
+		case http.StatusTooManyRequests:
+			return gjson.Result{}, fmt.Errorf("too many requests")
+		case http.StatusUnauthorized:
+			return gjson.Result{}, fmt.Errorf("unauthorized")
+		case http.StatusForbidden:
+			return gjson.Result{}, fmt.Errorf("forbidden")
+		default:
+			return gjson.Result{}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		}
+	}
+
 	var bodyReader io.Reader
 	if resp.Header.Get("Content-Encoding") == "br" {
 		bodyReader = brotli.NewReader(resp.Body)
@@ -84,12 +118,11 @@ func makeRequest(postData *PostData, urlMethod string, proxyURL string) (gjson.R
 	if err != nil {
 		return gjson.Result{}, err
 	}
-
 	return gjson.ParseBytes(body), nil
 }
 
 // splitText splits the input text for translation
-func splitText(text string, tagHandling bool, proxyURL string) (gjson.Result, error) {
+func splitText(text string, tagHandling bool, proxyURL string, dlSession string) (gjson.Result, error) {
 	postData := &PostData{
 		Jsonrpc: "2.0",
 		Method:  "LMT_split_text",
@@ -106,11 +139,11 @@ func splitText(text string, tagHandling bool, proxyURL string) (gjson.Result, er
 		},
 	}
 
-	return makeRequest(postData, "LMT_split_text", proxyURL)
+	return makeRequest(postData, "LMT_split_text", proxyURL, dlSession)
 }
 
 // TranslateByDeepLX performs translation using DeepL API
-func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, proxyURL string) (DeepLXTranslationResult, error) {
+func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, proxyURL string, dlSession string) (DeepLXTranslationResult, error) {
 	if text == "" {
 		return DeepLXTranslationResult{
 			Code:    http.StatusNotFound,
@@ -119,7 +152,7 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 	}
 
 	// Split text first
-	splitResult, err := splitText(text, tagHandling == "html" || tagHandling == "xml", proxyURL)
+	splitResult, err := splitText(text, tagHandling == "html" || tagHandling == "xml", proxyURL, dlSession)
 	if err != nil {
 		return DeepLXTranslationResult{
 			Code:    http.StatusServiceUnavailable,
@@ -161,6 +194,13 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 		})
 	}
 
+	hasRegionalVariant := false
+	targetLangParts := strings.Split(targetLang, "-")
+	targetLangCode := targetLangParts[0]
+	if len(targetLangParts) > 1 {
+		hasRegionalVariant = true
+	}
+
 	// Prepare translation request
 	id := getRandomNumber()
 	postData := &PostData{
@@ -169,11 +209,12 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 		ID:      id,
 		Params: Params{
 			CommonJobParams: CommonJobParams{
-				Mode: "translate",
+				Mode:            "translate",
+				RegionalVariant: map[bool]string{true: targetLang, false: ""}[hasRegionalVariant],
 			},
 			Lang: Lang{
 				SourceLangComputed: strings.ToUpper(sourceLang),
-				TargetLang:         strings.ToUpper(targetLang),
+				TargetLang:         strings.ToUpper(targetLangCode),
 			},
 			Jobs:      jobs,
 			Priority:  1,
@@ -182,7 +223,7 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 	}
 
 	// Make translation request
-	result, err := makeRequest(postData, "LMT_handle_jobs", proxyURL)
+	result, err := makeRequest(postData, "LMT_handle_jobs", proxyURL, dlSession)
 	if err != nil {
 		return DeepLXTranslationResult{
 			Code:    http.StatusServiceUnavailable,
@@ -232,6 +273,6 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 		Alternatives: alternatives,
 		SourceLang:   sourceLang,
 		TargetLang:   targetLang,
-		Method:       "Free",
+		Method:       map[bool]string{true: "Pro", false: "Free"}[dlSession != ""],
 	}, nil
 }
