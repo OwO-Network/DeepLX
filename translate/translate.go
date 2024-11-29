@@ -15,6 +15,7 @@ package translate
 import (
 	"bytes"
 	"fmt"
+	"github.com/imroc/req/v3"
 	"io"
 	"net/http"
 	"net/url"
@@ -27,71 +28,57 @@ import (
 const baseURL = "https://www2.deepl.com/jsonrpc"
 
 // makeRequest makes an HTTP request to DeepL API
+
 func makeRequest(postData *PostData, urlMethod string, proxyURL string, dlSession string) (gjson.Result, error) {
 	urlFull := fmt.Sprintf("%s?client=chrome-extension,1.28.0&method=%s", baseURL, urlMethod)
 
 	postStr := formatPostString(postData)
-	req, err := http.NewRequest("POST", urlFull, bytes.NewReader([]byte(postStr)))
-	if err != nil {
-		return gjson.Result{}, err
+
+	// Create a new req client
+	client := req.C().SetTLSFingerprintRandomized()
+
+	// Set headers
+	headers := http.Header{
+		"Accept":          []string{"*/*"},
+		"Accept-Language": []string{"en-US,en;q=0.9,zh-CN;q=0.8,zh-TW;q=0.7,zh-HK;q=0.6,zh;q=0.5"},
+		"Authorization":   []string{"None"},
+		"Cache-Control":   []string{"no-cache"},
+		"Content-Type":    []string{"application/json"},
+		"DNT":             []string{"1"},
+		"Origin":          []string{"chrome-extension://cofdbpoegempjloogbagkncekinflcnj"},
+		"Pragma":          []string{"no-cache"},
+		"Priority":        []string{"u=1, i"},
+		"Referer":         []string{"https://www.deepl.com/"},
+		"Sec-Fetch-Dest":  []string{"empty"},
+		"Sec-Fetch-Mode":  []string{"cors"},
+		"Sec-Fetch-Site":  []string{"none"},
+		"Sec-GPC":         []string{"1"},
+		"User-Agent":      []string{"DeepLBrowserExtension/1.28.0 Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"},
 	}
 
 	if dlSession != "" {
-		req.Header = http.Header{
-			"Accept":          []string{"*/*"},
-			"Accept-Language": []string{"en-US,en;q=0.9,zh-CN;q=0.8,zh-TW;q=0.7,zh-HK;q=0.6,zh;q=0.5"},
-			"Authorization":   []string{"None"},
-			"Cache-Control":   []string{"no-cache"},
-			"Content-Type":    []string{"application/json"},
-			"DNT":             []string{"1"},
-			"Origin":          []string{"chrome-extension://cofdbpoegempjloogbagkncekinflcnj"},
-			"Pragma":          []string{"no-cache"},
-			"Priority":        []string{"u=1, i"},
-			"Referer":         []string{"https://www.deepl.com/"},
-			"Sec-Fetch-Dest":  []string{"empty"},
-			"Sec-Fetch-Mode":  []string{"cors"},
-			"Sec-Fetch-Site":  []string{"none"},
-			"Sec-GPC":         []string{"1"},
-			"User-Agent":      []string{"DeepLBrowserExtension/1.28.0 Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"},
-			"Cookie":          []string{"dl_session=" + dlSession},
-		}
-	} else {
-		req.Header = http.Header{
-			"Accept":          []string{"*/*"},
-			"Accept-Language": []string{"en-US,en;q=0.9,zh-CN;q=0.8,zh-TW;q=0.7,zh-HK;q=0.6,zh;q=0.5"},
-			"Authorization":   []string{"None"},
-			"Cache-Control":   []string{"no-cache"},
-			"Content-Type":    []string{"application/json"},
-			"DNT":             []string{"1"},
-			"Origin":          []string{"chrome-extension://cofdbpoegempjloogbagkncekinflcnj"},
-			"Pragma":          []string{"no-cache"},
-			"Priority":        []string{"u=1, i"},
-			"Referer":         []string{"https://www.deepl.com/"},
-			"Sec-Fetch-Dest":  []string{"empty"},
-			"Sec-Fetch-Mode":  []string{"cors"},
-			"Sec-Fetch-Site":  []string{"none"},
-			"Sec-GPC":         []string{"1"},
-			"User-Agent":      []string{"DeepLBrowserExtension/1.28.0 Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"},
-		}
+		headers.Set("Cookie", "dl_session="+dlSession)
 	}
 
-	// Setup client with proxy if provided
-	var client *http.Client
+	// Set proxy if provided
 	if proxyURL != "" {
 		proxy, err := url.Parse(proxyURL)
 		if err != nil {
 			return gjson.Result{}, err
 		}
-		client = &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxy)}}
-	} else {
-		client = &http.Client{}
+		client.SetProxyURL(proxy.String())
 	}
 
-	resp, err := client.Do(req)
+	// Make the request
+	r := client.R()
+	r.Headers = headers
+	resp, err := r.
+		SetBody(bytes.NewReader([]byte(postStr))).
+		Post(urlFull)
+
 	if err != nil {
 		return gjson.Result{}, err
 	}
-	defer resp.Body.Close()
 
 	var bodyReader io.Reader
 	if resp.Header.Get("Content-Encoding") == "br" {
