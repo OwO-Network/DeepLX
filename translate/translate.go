@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2024-09-16 11:59:24
  * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-11-01 23:19:11
+ * @LastEditTime: 2024-12-03 11:23:23
  * @FilePath: /DeepLX/translate/translate.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -15,11 +15,13 @@ package translate
 import (
 	"bytes"
 	"fmt"
-	"github.com/imroc/req/v3"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/abadojack/whatlanggo"
+	"github.com/imroc/req/v3"
 
 	"github.com/andybalholm/brotli"
 	"github.com/tidwall/gjson"
@@ -135,7 +137,7 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 
 	// Get detected language if source language is auto
 	if sourceLang == "auto" || sourceLang == "" {
-		sourceLang = strings.ToLower(splitResult.Get("result.lang.detected").String())
+		sourceLang = strings.ToUpper(whatlanggo.DetectLang(text).Iso6391())
 	}
 
 	// Prepare jobs from split result

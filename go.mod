@@ -3,6 +3,7 @@ module github.com/OwO-Network/DeepLX
 go 1.23.3
 
 require (
+	github.com/abadojack/whatlanggo v1.0.1
 	github.com/andybalholm/brotli v1.1.0
 	github.com/gin-contrib/cors v1.6.0
 	github.com/gin-gonic/gin v1.9.1
