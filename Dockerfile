@@ -1,4 +1,4 @@
-FROM golang:1.23.4 AS builder
+FROM golang:1.23.5 AS builder
 WORKDIR /go/src/github.com/OwO-Network/DeepLX
 COPY . .
 RUN go get -d -v ./

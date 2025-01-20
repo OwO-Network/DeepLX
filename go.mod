@@ -1,6 +1,6 @@
 module github.com/OwO-Network/DeepLX
 
-go 1.23.4
+go 1.23.5
 
 require (
 	github.com/abadojack/whatlanggo v1.0.1
