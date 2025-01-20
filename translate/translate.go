@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2024-09-16 11:59:24
  * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-12-03 11:23:23
+ * @LastEditTime: 2025-01-20 17:09:59
  * @FilePath: /DeepLX/translate/translate.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -126,87 +126,79 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 		}, nil
 	}
 
-	// Split text first
-	splitResult, err := splitText(text, tagHandling == "html" || tagHandling == "xml", proxyURL, dlSession)
-	if err != nil {
-		return DeepLXTranslationResult{
-			Code:    http.StatusServiceUnavailable,
-			Message: err.Error(),
-		}, nil
-	}
+	// Split text by newlines and store them for later reconstruction
+	textParts := strings.Split(text, "\n")
+	var translatedParts []string
+	var allAlternatives [][]string // Store alternatives for each part
 
-	// Get detected language if source language is auto
-	if sourceLang == "auto" || sourceLang == "" {
-		sourceLang = strings.ToUpper(whatlanggo.DetectLang(text).Iso6391())
-	}
-
-	// Prepare jobs from split result
-	var jobs []Job
-	chunks := splitResult.Get("result.texts.0.chunks").Array()
-	for idx, chunk := range chunks {
-		sentence := chunk.Get("sentences.0")
-
-		// Handle context
-		contextBefore := []string{}
-		contextAfter := []string{}
-		if idx > 0 {
-			contextBefore = []string{chunks[idx-1].Get("sentences.0.text").String()}
-		}
-		if idx < len(chunks)-1 {
-			contextAfter = []string{chunks[idx+1].Get("sentences.0.text").String()}
+	for _, part := range textParts {
+		if strings.TrimSpace(part) == "" {
+			translatedParts = append(translatedParts, "")
+			allAlternatives = append(allAlternatives, []string{""})
+			continue
 		}
 
-		jobs = append(jobs, Job{
-			Kind:               "default",
-			PreferredNumBeams:  4,
-			RawEnContextBefore: contextBefore,
-			RawEnContextAfter:  contextAfter,
-			Sentences: []Sentence{{
-				Prefix: sentence.Get("prefix").String(),
-				Text:   sentence.Get("text").String(),
-				ID:     idx + 1,
-			}},
-		})
-	}
+		// Split text first
+		splitResult, err := splitText(part, tagHandling == "html" || tagHandling == "xml", proxyURL, dlSession)
+		if err != nil {
+			return DeepLXTranslationResult{
+				Code:    http.StatusServiceUnavailable,
+				Message: err.Error(),
+			}, nil
+		}
 
-	hasRegionalVariant := false
-	targetLangCode := targetLang
-	targetLangParts := strings.Split(targetLang, "-")
-	if len(targetLangParts) > 1 {
-		targetLangCode = targetLangParts[0]
-		hasRegionalVariant = true
-	}
+		// Get detected language if source language is auto
+		if sourceLang == "auto" || sourceLang == "" {
+			sourceLang = strings.ToUpper(whatlanggo.DetectLang(part).Iso6391())
+		}
 
-	// Prepare translation request
-	id := getRandomNumber()
+		// Prepare jobs from split result
+		var jobs []Job
+		chunks := splitResult.Get("result.texts.0.chunks").Array()
+		for idx, chunk := range chunks {
+			sentence := chunk.Get("sentences.0")
 
-	postData := &PostData{
-		Jsonrpc: "2.0",
-		Method:  "LMT_handle_jobs",
-		ID:      id,
-		Params: Params{
-			CommonJobParams: CommonJobParams{
-				Mode: "translate",
-			},
-			Lang: Lang{
-				SourceLangComputed: strings.ToUpper(sourceLang),
-				TargetLang:         strings.ToUpper(targetLangCode),
-			},
-			Jobs:      jobs,
-			Priority:  1,
-			Timestamp: getTimeStamp(getICount(text)),
-		},
-	}
+			// Handle context
+			contextBefore := []string{}
+			contextAfter := []string{}
+			if idx > 0 {
+				contextBefore = []string{chunks[idx-1].Get("sentences.0.text").String()}
+			}
+			if idx < len(chunks)-1 {
+				contextAfter = []string{chunks[idx+1].Get("sentences.0.text").String()}
+			}
 
-	if hasRegionalVariant {
-		postData = &PostData{
+			jobs = append(jobs, Job{
+				Kind:               "default",
+				PreferredNumBeams:  4,
+				RawEnContextBefore: contextBefore,
+				RawEnContextAfter:  contextAfter,
+				Sentences: []Sentence{{
+					Prefix: sentence.Get("prefix").String(),
+					Text:   sentence.Get("text").String(),
+					ID:     idx + 1,
+				}},
+			})
+		}
+
+		hasRegionalVariant := false
+		targetLangCode := targetLang
+		targetLangParts := strings.Split(targetLang, "-")
+		if len(targetLangParts) > 1 {
+			targetLangCode = targetLangParts[0]
+			hasRegionalVariant = true
+		}
+
+		// Prepare translation request
+		id := getRandomNumber()
+
+		postData := &PostData{
 			Jsonrpc: "2.0",
 			Method:  "LMT_handle_jobs",
 			ID:      id,
 			Params: Params{
 				CommonJobParams: CommonJobParams{
-					Mode:            "translate",
-					RegionalVariant: map[bool]string{true: targetLang, false: ""}[hasRegionalVariant],
+					Mode: "translate",
 				},
 				Lang: Lang{
 					SourceLangComputed: strings.ToUpper(sourceLang),
@@ -214,60 +206,111 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 				},
 				Jobs:      jobs,
 				Priority:  1,
-				Timestamp: getTimeStamp(getICount(text)),
+				Timestamp: getTimeStamp(getICount(part)),
 			},
 		}
-	}
 
-	// Make translation request
-	result, err := makeRequest(postData, "LMT_handle_jobs", proxyURL, dlSession)
-	if err != nil {
-		return DeepLXTranslationResult{
-			Code:    http.StatusServiceUnavailable,
-			Message: err.Error(),
-		}, nil
-	}
+		if hasRegionalVariant {
+			postData = &PostData{
+				Jsonrpc: "2.0",
+				Method:  "LMT_handle_jobs",
+				ID:      id,
+				Params: Params{
+					CommonJobParams: CommonJobParams{
+						Mode:            "translate",
+						RegionalVariant: map[bool]string{true: targetLang, false: ""}[hasRegionalVariant],
+					},
+					Lang: Lang{
+						SourceLangComputed: strings.ToUpper(sourceLang),
+						TargetLang:         strings.ToUpper(targetLangCode),
+					},
+					Jobs:      jobs,
+					Priority:  1,
+					Timestamp: getTimeStamp(getICount(part)),
+				},
+			}
+		}
 
-	// Process translation results
-	var alternatives []string
-	var translatedText string
+		// Make translation request
+		result, err := makeRequest(postData, "LMT_handle_jobs", proxyURL, dlSession)
+		if err != nil {
+			return DeepLXTranslationResult{
+				Code:    http.StatusServiceUnavailable,
+				Message: err.Error(),
+			}, nil
+		}
 
-	translations := result.Get("result.translations").Array()
-	if len(translations) > 0 {
-		// Get alternatives
-		numBeams := len(translations[0].Get("beams").Array())
-		for i := 0; i < numBeams; i++ {
-			var altText string
+		// Process translation results
+		var partTranslation string
+		var partAlternatives []string
+
+		translations := result.Get("result.translations").Array()
+		if len(translations) > 0 {
+			// Process main translation
 			for _, translation := range translations {
-				beams := translation.Get("beams").Array()
-				if i < len(beams) {
-					altText += beams[i].Get("sentences.0.text").String()
+				partTranslation += translation.Get("beams.0.sentences.0.text").String() + " "
+			}
+			partTranslation = strings.TrimSpace(partTranslation)
+
+			// Process alternatives
+			numBeams := len(translations[0].Get("beams").Array())
+			for i := 1; i < numBeams; i++ { // Start from 1 since 0 is the main translation
+				var altText string
+				for _, translation := range translations {
+					beams := translation.Get("beams").Array()
+					if i < len(beams) {
+						altText += beams[i].Get("sentences.0.text").String() + " "
+					}
+				}
+				if altText != "" {
+					partAlternatives = append(partAlternatives, strings.TrimSpace(altText))
 				}
 			}
-			if altText != "" {
-				alternatives = append(alternatives, altText)
-			}
 		}
 
-		// Get main translation
-		for _, translation := range translations {
-			translatedText += translation.Get("beams.0.sentences.0.text").String() + " "
+		if partTranslation == "" {
+			return DeepLXTranslationResult{
+				Code:    http.StatusServiceUnavailable,
+				Message: "Translation failed",
+			}, nil
 		}
-		translatedText = strings.TrimSpace(translatedText)
+
+		translatedParts = append(translatedParts, partTranslation)
+		allAlternatives = append(allAlternatives, partAlternatives)
 	}
 
-	if translatedText == "" {
-		return DeepLXTranslationResult{
-			Code:    http.StatusServiceUnavailable,
-			Message: "Translation failed",
-		}, nil
+	// Join all translated parts with newlines
+	translatedText := strings.Join(translatedParts, "\n")
+
+	// Combine alternatives with proper newline handling
+	var combinedAlternatives []string
+	maxAlts := 0
+	for _, alts := range allAlternatives {
+		if len(alts) > maxAlts {
+			maxAlts = len(alts)
+		}
+	}
+
+	// Create combined alternatives preserving line structure
+	for i := 0; i < maxAlts; i++ {
+		var altParts []string
+		for j, alts := range allAlternatives {
+			if i < len(alts) {
+				altParts = append(altParts, alts[i])
+			} else if len(translatedParts[j]) == 0 {
+				altParts = append(altParts, "") // Keep empty lines
+			} else {
+				altParts = append(altParts, translatedParts[j]) // Use main translation if no alternative
+			}
+		}
+		combinedAlternatives = append(combinedAlternatives, strings.Join(altParts, "\n"))
 	}
 
 	return DeepLXTranslationResult{
 		Code:         http.StatusOK,
-		ID:           id,
+		ID:           getRandomNumber(), // Using new ID for the complete translation
 		Data:         translatedText,
-		Alternatives: alternatives,
+		Alternatives: combinedAlternatives,
 		SourceLang:   sourceLang,
 		TargetLang:   targetLang,
 		Method:       map[bool]string{true: "Pro", false: "Free"}[dlSession != ""],
