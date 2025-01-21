@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   deeplx:
     image: ghcr.io/owo-network/deeplx:latest
