@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2024-09-16 11:59:24
  * @LastEditors: Vincent Yang
- * @LastEditTime: 2025-01-20 17:09:59
+ * @LastEditTime: 2025-02-01 03:21:41
  * @FilePath: /DeepLX/translate/translate.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/abadojack/whatlanggo"
 	"github.com/imroc/req/v3"
@@ -126,92 +127,89 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 		}, nil
 	}
 
-	// Split text by newlines and store them for later reconstruction
+	// Split text by newlines
 	textParts := strings.Split(text, "\n")
-	var translatedParts []string
-	var allAlternatives [][]string // Store alternatives for each part
 
-	for _, part := range textParts {
-		if strings.TrimSpace(part) == "" {
-			translatedParts = append(translatedParts, "")
-			allAlternatives = append(allAlternatives, []string{""})
-			continue
-		}
+	// Create channels for results
+	type translationResult struct {
+		index        int
+		translation  string
+		alternatives []string
+		err          error
+	}
+	results := make(chan translationResult, len(textParts))
 
-		// Split text first
-		splitResult, err := splitText(part, tagHandling == "html" || tagHandling == "xml", proxyURL, dlSession)
-		if err != nil {
-			return DeepLXTranslationResult{
-				Code:    http.StatusServiceUnavailable,
-				Message: err.Error(),
-			}, nil
-		}
+	// Create a wait group to track all goroutines
+	var wg sync.WaitGroup
 
-		// Get detected language if source language is auto
-		if sourceLang == "auto" || sourceLang == "" {
-			sourceLang = strings.ToUpper(whatlanggo.DetectLang(part).Iso6391())
-		}
+	// Launch goroutines for each text part
+	for i := range textParts {
+		wg.Add(1)
+		go func(index int, text string) {
+			defer wg.Done()
 
-		// Prepare jobs from split result
-		var jobs []Job
-		chunks := splitResult.Get("result.texts.0.chunks").Array()
-		for idx, chunk := range chunks {
-			sentence := chunk.Get("sentences.0")
-
-			// Handle context
-			contextBefore := []string{}
-			contextAfter := []string{}
-			if idx > 0 {
-				contextBefore = []string{chunks[idx-1].Get("sentences.0.text").String()}
-			}
-			if idx < len(chunks)-1 {
-				contextAfter = []string{chunks[idx+1].Get("sentences.0.text").String()}
+			if strings.TrimSpace(text) == "" {
+				results <- translationResult{
+					index:        index,
+					translation:  "",
+					alternatives: []string{""},
+				}
+				return
 			}
 
-			jobs = append(jobs, Job{
-				Kind:               "default",
-				PreferredNumBeams:  4,
-				RawEnContextBefore: contextBefore,
-				RawEnContextAfter:  contextAfter,
-				Sentences: []Sentence{{
-					Prefix: sentence.Get("prefix").String(),
-					Text:   sentence.Get("text").String(),
-					ID:     idx + 1,
-				}},
-			})
-		}
+			// Split text first
+			splitResult, err := splitText(text, tagHandling == "html" || tagHandling == "xml", proxyURL, dlSession)
+			if err != nil {
+				results <- translationResult{index: index, err: err}
+				return
+			}
 
-		hasRegionalVariant := false
-		targetLangCode := targetLang
-		targetLangParts := strings.Split(targetLang, "-")
-		if len(targetLangParts) > 1 {
-			targetLangCode = targetLangParts[0]
-			hasRegionalVariant = true
-		}
+			// Get detected language if source language is auto
+			currentSourceLang := sourceLang
+			if currentSourceLang == "auto" || currentSourceLang == "" {
+				currentSourceLang = strings.ToUpper(whatlanggo.DetectLang(text).Iso6391())
+			}
 
-		// Prepare translation request
-		id := getRandomNumber()
+			// Prepare jobs from split result
+			var jobs []Job
+			chunks := splitResult.Get("result.texts.0.chunks").Array()
+			for idx, chunk := range chunks {
+				sentence := chunk.Get("sentences.0")
 
-		postData := &PostData{
-			Jsonrpc: "2.0",
-			Method:  "LMT_handle_jobs",
-			ID:      id,
-			Params: Params{
-				CommonJobParams: CommonJobParams{
-					Mode: "translate",
-				},
-				Lang: Lang{
-					SourceLangComputed: strings.ToUpper(sourceLang),
-					TargetLang:         strings.ToUpper(targetLangCode),
-				},
-				Jobs:      jobs,
-				Priority:  1,
-				Timestamp: getTimeStamp(getICount(part)),
-			},
-		}
+				// Handle context
+				contextBefore := []string{}
+				contextAfter := []string{}
+				if idx > 0 {
+					contextBefore = []string{chunks[idx-1].Get("sentences.0.text").String()}
+				}
+				if idx < len(chunks)-1 {
+					contextAfter = []string{chunks[idx+1].Get("sentences.0.text").String()}
+				}
 
-		if hasRegionalVariant {
-			postData = &PostData{
+				jobs = append(jobs, Job{
+					Kind:               "default",
+					PreferredNumBeams:  4,
+					RawEnContextBefore: contextBefore,
+					RawEnContextAfter:  contextAfter,
+					Sentences: []Sentence{{
+						Prefix: sentence.Get("prefix").String(),
+						Text:   sentence.Get("text").String(),
+						ID:     idx + 1,
+					}},
+				})
+			}
+
+			hasRegionalVariant := false
+			targetLangCode := targetLang
+			targetLangParts := strings.Split(targetLang, "-")
+			if len(targetLangParts) > 1 {
+				targetLangCode = targetLangParts[0]
+				hasRegionalVariant = true
+			}
+
+			// Prepare translation request
+			id := getRandomNumber()
+			postData := &PostData{
 				Jsonrpc: "2.0",
 				Method:  "LMT_handle_jobs",
 				ID:      id,
@@ -221,62 +219,82 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 						RegionalVariant: map[bool]string{true: targetLang, false: ""}[hasRegionalVariant],
 					},
 					Lang: Lang{
-						SourceLangComputed: strings.ToUpper(sourceLang),
+						SourceLangComputed: strings.ToUpper(currentSourceLang),
 						TargetLang:         strings.ToUpper(targetLangCode),
 					},
 					Jobs:      jobs,
 					Priority:  1,
-					Timestamp: getTimeStamp(getICount(part)),
+					Timestamp: getTimeStamp(getICount(text)),
 				},
 			}
-		}
 
-		// Make translation request
-		result, err := makeRequest(postData, "LMT_handle_jobs", proxyURL, dlSession)
-		if err != nil {
-			return DeepLXTranslationResult{
-				Code:    http.StatusServiceUnavailable,
-				Message: err.Error(),
-			}, nil
-		}
-
-		// Process translation results
-		var partTranslation string
-		var partAlternatives []string
-
-		translations := result.Get("result.translations").Array()
-		if len(translations) > 0 {
-			// Process main translation
-			for _, translation := range translations {
-				partTranslation += translation.Get("beams.0.sentences.0.text").String() + " "
+			// Make translation request
+			result, err := makeRequest(postData, "LMT_handle_jobs", proxyURL, dlSession)
+			if err != nil {
+				results <- translationResult{index: index, err: err}
+				return
 			}
-			partTranslation = strings.TrimSpace(partTranslation)
 
-			// Process alternatives
-			numBeams := len(translations[0].Get("beams").Array())
-			for i := 1; i < numBeams; i++ { // Start from 1 since 0 is the main translation
-				var altText string
+			// Process translation results
+			var partTranslation string
+			var partAlternatives []string
+
+			translations := result.Get("result.translations").Array()
+			if len(translations) > 0 {
+				// Process main translation
 				for _, translation := range translations {
-					beams := translation.Get("beams").Array()
-					if i < len(beams) {
-						altText += beams[i].Get("sentences.0.text").String() + " "
+					partTranslation += translation.Get("beams.0.sentences.0.text").String() + " "
+				}
+				partTranslation = strings.TrimSpace(partTranslation)
+
+				// Process alternatives
+				numBeams := len(translations[0].Get("beams").Array())
+				for i := 1; i < numBeams; i++ {
+					var altText string
+					for _, translation := range translations {
+						beams := translation.Get("beams").Array()
+						if i < len(beams) {
+							altText += beams[i].Get("sentences.0.text").String() + " "
+						}
+					}
+					if altText != "" {
+						partAlternatives = append(partAlternatives, strings.TrimSpace(altText))
 					}
 				}
-				if altText != "" {
-					partAlternatives = append(partAlternatives, strings.TrimSpace(altText))
-				}
 			}
-		}
 
-		if partTranslation == "" {
+			if partTranslation == "" {
+				results <- translationResult{index: index, err: fmt.Errorf("translation failed")}
+				return
+			}
+
+			results <- translationResult{
+				index:        index,
+				translation:  partTranslation,
+				alternatives: partAlternatives,
+			}
+		}(i, textParts[i])
+	}
+
+	// Close results channel when all goroutines are done
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	// Collect results maintaining original order
+	translatedParts := make([]string, len(textParts))
+	allAlternatives := make([][]string, len(textParts))
+
+	for result := range results {
+		if result.err != nil {
 			return DeepLXTranslationResult{
 				Code:    http.StatusServiceUnavailable,
-				Message: "Translation failed",
+				Message: result.err.Error(),
 			}, nil
 		}
-
-		translatedParts = append(translatedParts, partTranslation)
-		allAlternatives = append(allAlternatives, partAlternatives)
+		translatedParts[result.index] = result.translation
+		allAlternatives[result.index] = result.alternatives
 	}
 
 	// Join all translated parts with newlines
@@ -298,9 +316,9 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 			if i < len(alts) {
 				altParts = append(altParts, alts[i])
 			} else if len(translatedParts[j]) == 0 {
-				altParts = append(altParts, "") // Keep empty lines
+				altParts = append(altParts, "")
 			} else {
-				altParts = append(altParts, translatedParts[j]) // Use main translation if no alternative
+				altParts = append(altParts, translatedParts[j])
 			}
 		}
 		combinedAlternatives = append(combinedAlternatives, strings.Join(altParts, "\n"))
@@ -308,7 +326,7 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 
 	return DeepLXTranslationResult{
 		Code:         http.StatusOK,
-		ID:           getRandomNumber(), // Using new ID for the complete translation
+		ID:           getRandomNumber(),
 		Data:         translatedText,
 		Alternatives: combinedAlternatives,
 		SourceLang:   sourceLang,
