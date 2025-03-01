@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2024-09-16 11:59:24
  * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-11-01 23:18:56
+ * @LastEditTime: 2025-03-01 04:16:07
  * @FilePath: /DeepLX/translate/types.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -14,14 +14,19 @@ package translate
 
 // Lang represents the language settings for translation
 type Lang struct {
-	SourceLangComputed string `json:"source_lang_computed,omitempty"`
-	TargetLang         string `json:"target_lang"`
-	LangUserSelected   string `json:"lang_user_selected,omitempty"`
+	SourceLangUserSelected string `json:"source_lang_user_selected"` // Can be "auto"
+	TargetLang             string `json:"target_lang"`
+	SourceLangComputed     string `json:"source_lang_computed,omitempty"`
 }
 
 // CommonJobParams represents common parameters for translation jobs
 type CommonJobParams struct {
+	Formality       string `json:"formality"` // Can be "undefined"
+	TranscribeAs    string `json:"transcribe_as"`
 	Mode            string `json:"mode"`
+	WasSpoken       bool   `json:"wasSpoken"`
+	AdvancedMode    bool   `json:"advancedMode"`
+	TextType        string `json:"textType"`
 	RegionalVariant string `json:"regionalVariant,omitempty"`
 }
 
@@ -45,10 +50,7 @@ type Job struct {
 type Params struct {
 	CommonJobParams CommonJobParams `json:"commonJobParams"`
 	Lang            Lang            `json:"lang"`
-	Texts           []string        `json:"texts,omitempty"`
-	TextType        string          `json:"textType,omitempty"`
-	Jobs            []Job           `json:"jobs,omitempty"`
-	Priority        int             `json:"priority,omitempty"`
+	Jobs            []Job           `json:"jobs"`
 	Timestamp       int64           `json:"timestamp"`
 }
 
@@ -60,25 +62,6 @@ type PostData struct {
 	Params  Params `json:"params"`
 }
 
-// SplitTextResponse represents the response from text splitting
-type SplitTextResponse struct {
-	Jsonrpc string `json:"jsonrpc"`
-	ID      int64  `json:"id"`
-	Result  struct {
-		Lang struct {
-			Detected string `json:"detected"`
-		} `json:"lang"`
-		Texts []struct {
-			Chunks []struct {
-				Sentences []struct {
-					Prefix string `json:"prefix"`
-					Text   string `json:"text"`
-				} `json:"sentences"`
-			} `json:"chunks"`
-		} `json:"texts"`
-	} `json:"result"`
-}
-
 // TranslationResponse represents the response from translation
 type TranslationResponse struct {
 	Jsonrpc string `json:"jsonrpc"`
@@ -86,14 +69,25 @@ type TranslationResponse struct {
 	Result  struct {
 		Translations []struct {
 			Beams []struct {
-				Sentences []struct {
-					Text string `json:"text"`
-				} `json:"sentences"`
+				Sentences       []SentenceResponse `json:"sentences"`
+				NumSymbols      int                `json:"num_symbols"`
+				RephraseVariant struct {           // Added rephrase_variant
+					Name string `json:"name"`
+				} `json:"rephrase_variant"`
 			} `json:"beams"`
+			Quality string `json:"quality"` // Added quality
 		} `json:"translations"`
-		SourceLang string `json:"source_lang"`
-		TargetLang string `json:"target_lang"`
+		TargetLang            string                 `json:"target_lang"`
+		SourceLang            string                 `json:"source_lang"`
+		SourceLangIsConfident bool                   `json:"source_lang_is_confident"`
+		DetectedLanguages     map[string]interface{} `json:"detectedLanguages"` // Use interface{} for now
 	} `json:"result"`
+}
+
+// SentenceResponse is a helper struct for the response sentences
+type SentenceResponse struct {
+	Text string `json:"text"`
+	IDS  []int  `json:"ids"` // Added IDS
 }
 
 // DeepLXTranslationResult represents the final translation result
@@ -101,8 +95,8 @@ type DeepLXTranslationResult struct {
 	Code         int      `json:"code"`
 	ID           int64    `json:"id"`
 	Message      string   `json:"message,omitempty"`
-	Data         string   `json:"data"`
-	Alternatives []string `json:"alternatives"`
+	Data         string   `json:"data"`         // The primary translated text
+	Alternatives []string `json:"alternatives"` // Other possible translations
 	SourceLang   string   `json:"source_lang"`
 	TargetLang   string   `json:"target_lang"`
 	Method       string   `json:"method"`
