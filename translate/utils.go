@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2024-09-16 11:59:24
  * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-11-01 00:39:32
+ * @LastEditTime: 2025-04-08 14:27:21
  * @FilePath: /DeepLX/translate/utils.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -54,9 +54,4 @@ func formatPostString(postData *PostData) string {
 	}
 
 	return postStr
-}
-
-// isRichText checks if text contains HTML-like tags
-func isRichText(text string) bool {
-	return strings.Contains(text, "<") && strings.Contains(text, ">")
 }
