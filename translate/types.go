@@ -46,8 +46,22 @@ type Job struct {
 	Sentences          []Sentence `json:"sentences"`
 }
 
+// TextItem represents a text item for translation
+type TextItem struct {
+	Text                string `json:"text"`
+	RequestAlternatives int    `json:"requestAlternatives"`
+}
+
 // Params represents parameters for translation requests
 type Params struct {
+	Splitting string     `json:"splitting"`
+	Lang      Lang       `json:"lang"`
+	Texts     []TextItem `json:"texts"`
+	Timestamp int64      `json:"timestamp"`
+}
+
+// LegacyParams represents the old parameters structure for jobs (kept for compatibility)
+type LegacyParams struct {
 	CommonJobParams CommonJobParams `json:"commonJobParams"`
 	Lang            Lang            `json:"lang"`
 	Jobs            []Job           `json:"jobs"`
@@ -62,8 +76,26 @@ type PostData struct {
 	Params  Params `json:"params"`
 }
 
-// TranslationResponse represents the response from translation
+// TextResponse represents a single text response
+type TextResponse struct {
+	Text         string   `json:"text"`
+	Alternatives []struct {
+		Text string `json:"text"`
+	} `json:"alternatives"`
+}
+
+// TranslationResponse represents the response from LMT_handle_texts
 type TranslationResponse struct {
+	Jsonrpc string `json:"jsonrpc"`
+	ID      int64  `json:"id"`
+	Result  struct {
+		Lang  string          `json:"lang"`
+		Texts []TextResponse  `json:"texts"`
+	} `json:"result"`
+}
+
+// LegacyTranslationResponse represents the old response format (kept for compatibility)
+type LegacyTranslationResponse struct {
 	Jsonrpc string `json:"jsonrpc"`
 	ID      int64  `json:"id"`
 	Result  struct {

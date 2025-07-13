@@ -28,7 +28,7 @@ func getICount(translateText string) int64 {
 func getRandomNumber() int64 {
 	src := rand.NewSource(time.Now().UnixNano())
 	rng := rand.New(src)
-	num := rng.Int63n(99999) + 8300000
+	num := rng.Int63n(99999) + 100000
 	return num * 1000
 }
 
@@ -37,7 +37,7 @@ func getTimeStamp(iCount int64) int64 {
 	ts := time.Now().UnixMilli()
 	if iCount != 0 {
 		iCount = iCount + 1
-		return ts - ts%iCount + iCount
+		return ts - (ts % iCount) + iCount
 	}
 	return ts
 }
@@ -46,12 +46,14 @@ func getTimeStamp(iCount int64) int64 {
 func formatPostString(postData *PostData) string {
 	postBytes, _ := json.Marshal(postData)
 	postStr := string(postBytes)
-
-	if (postData.ID+5)%29 == 0 || (postData.ID+3)%13 == 0 {
-		postStr = strings.Replace(postStr, `"method":"`, `"method" : "`, 1)
-	} else {
-		postStr = strings.Replace(postStr, `"method":"`, `"method": "`, 1)
-	}
-
 	return postStr
+}
+
+// handlerBodyMethod manipulates the request body based on random number calculation
+func handlerBodyMethod(random int64, body string) string {
+	calc := (random+5)%29 == 0 || (random+3)%13 == 0
+	if calc {
+		return strings.Replace(body, `"method":"`, `"method" : "`, 1)
+	}
+	return strings.Replace(body, `"method":"`, `"method": "`, 1)
 }
