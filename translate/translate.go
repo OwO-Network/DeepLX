@@ -36,9 +36,18 @@ func makeRequestWithBody(postStr string, proxyURL string, dlSession string) (gjs
 	// Create a new req client
 	client := req.C().SetTLSFingerprintRandomized()
 
-	// Set minimal headers like TypeScript version
+	// Set headers to simulate browser request
 	headers := http.Header{
-		"Content-Type": []string{"application/json"},
+		"Content-Type":    []string{"application/json"},
+		"Accept":          []string{"*/*"},
+		"Accept-Language": []string{"en-US,en;q=0.9"},
+		"Accept-Encoding": []string{"gzip, deflate, br, zstd"},
+		"Origin":          []string{"https://www.deepl.com"},
+		"Referer":         []string{"https://www.deepl.com/"},
+		"Sec-Fetch-Dest":  []string{"empty"},
+		"Sec-Fetch-Mode":  []string{"cors"},
+		"Sec-Fetch-Site":  []string{"same-site"},
+		"User-Agent":      []string{"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0"},
 	}
 
 	if dlSession != "" {
@@ -68,6 +77,11 @@ func makeRequestWithBody(postStr string, proxyURL string, dlSession string) (gjs
 	// Check for blocked status like TypeScript version
 	if resp.StatusCode == 429 {
 		return gjson.Result{}, fmt.Errorf("too many requests, your IP has been blocked by DeepL temporarily, please don't request it frequently in a short time")
+	}
+
+	// Check for other error status codes
+	if resp.StatusCode != 200 {
+		return gjson.Result{}, fmt.Errorf("request failed with status code: %d", resp.StatusCode)
 	}
 
 	var bodyReader io.Reader
