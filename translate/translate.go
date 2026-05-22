@@ -99,6 +99,14 @@ var (
 	cookieWarmer  sync.Once
 )
 
+// oneshotClients caches one req.Client per proxy URL so all translate
+// calls share the underlying TCP / TLS / HTTP/2 connection pool.
+// Creating a fresh req.Client per request meant a brand-new TLS
+// handshake every time (~200-400ms of overhead on top of DeepL's own
+// ~1.5s processing latency). Reusing the client lets keep-alive +
+// session tickets cut that to near zero on the warm path.
+var oneshotClients sync.Map // map[string]*req.Client
+
 func sharedCookieJar() http.CookieJar {
 	cookieJarOnce.Do(func() {
 		j, _ := cookiejar.New(nil)
@@ -110,7 +118,10 @@ func sharedCookieJar() http.CookieJar {
 // warmCookies primes the shared jar by GETting www.deepl.com once.
 // The Set-Cookie response (userCountry / verifiedBot) lands on .deepl.com,
 // which is the eTLD+1 of oneshot-free.www.deepl.com, so subsequent POSTs
-// to the oneshot endpoint will carry those cookies automatically.
+// to the oneshot endpoint will carry those cookies automatically. The
+// same request doubles as a TLS-handshake warmup: it leaves a live
+// HTTP/2 connection to www.deepl.com in the client pool, which the
+// first oneshot POST then resumes via TLS session tickets.
 func warmCookies(client *req.Client) {
 	cookieWarmer.Do(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), warmupTimeout)
@@ -264,6 +275,31 @@ type oneshotRequest struct {
 // headers (pragma, cache-control, upgrade-insecure-requests, sec-fetch-user)
 // that a fetch() never emits — wipe those so the WAF cannot tell us apart
 // on that axis.
+// getOneshotClient returns a process-wide cached client for the given
+// proxy URL, creating it on first use. Sharing the client across
+// requests is the single biggest latency win we have on the warm path:
+// it keeps the TLS / HTTP/2 connection in the pool so subsequent
+// requests skip the handshake entirely. Kicks off cookie-jar warmup
+// in the background on first creation so that the first real translate
+// call lands on an already-established connection.
+func getOneshotClient(proxyURL string) (*req.Client, error) {
+	if c, ok := oneshotClients.Load(proxyURL); ok {
+		return c.(*req.Client), nil
+	}
+	c, err := newOneshotClient(proxyURL)
+	if err != nil {
+		return nil, err
+	}
+	if actual, loaded := oneshotClients.LoadOrStore(proxyURL, c); loaded {
+		return actual.(*req.Client), nil
+	}
+	// First time we've seen this proxy. Kick warmup off in the
+	// background so the very first translate call can run in parallel
+	// with the TLS handshake to www.deepl.com.
+	go warmCookies(c)
+	return c, nil
+}
+
 func newOneshotClient(proxyURL string) (*req.Client, error) {
 	client := req.C().ImpersonateChrome().SetCookieJar(sharedCookieJar()).SetTimeout(oneshotTimeout)
 	for _, h := range []string{
@@ -295,11 +331,10 @@ func newOneshotClient(proxyURL string) (*req.Client, error) {
 // exactly. Omitting that header instead would put the request on a
 // different server-side auth branch.
 func callOneshot(endpoint string, body []byte, bearerToken, proxyURL string) (gjson.Result, int, error) {
-	client, err := newOneshotClient(proxyURL)
+	client, err := getOneshotClient(proxyURL)
 	if err != nil {
 		return gjson.Result{}, 0, err
 	}
-	warmCookies(client) // no-op after the first translation in the process
 
 	authValue := "None"
 	if bearerToken != "" {
