@@ -13,33 +13,68 @@
 package translate
 
 import (
-	"bytes"
+	"compress/flate"
+	"compress/gzip"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
+	"github.com/andybalholm/brotli"
 	"github.com/imroc/req/v3"
 	"github.com/tidwall/gjson"
 )
 
-// DeepL's web frontend retired LMT_handle_jobs/LMT_handle_texts on www2.deepl.com
-// for the interactive translator (now a SignalR/WebSocket channel). The browser
-// extension and iOS app still use a stateless REST endpoint called "oneshot",
-// which is what we target here. It accepts anonymous traffic with a literal
-// `Authorization: None` header and lives on a separate rate-limit pool from
-// the JSON-RPC backends, so it is far less prone to "Too many requests" 429s.
+// DeepL's interactive web translator migrated to a SignalR/WebSocket
+// channel and the legacy LMT_handle_texts backend on www2.deepl.com now
+// 429s anonymous traffic within a handful of calls. The official Chrome
+// extension instead POSTs to a stateless "oneshot" endpoint that lives
+// on a separate rate-limit pool and accepts the literal header
+// `Authorization: None` for anonymous requests — that is what we target.
+//
+// The request we send is reverse-engineered from the extension's
+// background.js (Chrome Web Store ID cofdbpoegempjloogbagkncekinflcnj):
+//   - URL builder   → mN() at ~offset 529948
+//   - body builder  → IN() at ~offset 531200
+//   - fetch wrapper → JO() at ~offset 508659
+//   - app metadata  → Wo() at ~offset 16500
 const (
 	oneshotFreeEndpoint = "https://oneshot-free.www.deepl.com/v1/translate"
 	oneshotProEndpoint  = "https://oneshot-pro.www.deepl.com/v1/translate"
+
+	// Pinned to the Chrome version utls bundles into req v3 (HelloChrome_120).
+	// Keep this in lockstep with the user-agent and app_information.os_version
+	// so the TLS handshake, UA, and self-reported browser version all agree —
+	// a mismatch on any one of those is a cheap signal for the WAF.
+	impersonatedChromeMajor = "120"
+	chromeExtensionVersion  = "1.86.0"
+	chromeExtensionID       = "cofdbpoegempjloogbagkncekinflcnj"
 )
 
-// oneshot uses lowercase, BCP-47-ish language codes (de, en-US, zh-Hans).
-// Callers historically pass DeepL's uppercase codes (DE, EN, ZH) — translate
-// them here. Unknown codes fall through lowercased so future additions still
-// work without a code change.
+// instanceID mirrors the UUID the extension persists in chrome.storage on
+// install: stable for the life of the process, reused on every request.
+// Rotating it per-request would be a far stronger signal than reusing one.
+var instanceID = newInstanceID()
+
+func newInstanceID() string {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return "00000000-0000-4000-8000-000000000000"
+	}
+	b[6] = (b[6] & 0x0f) | 0x40 // RFC 4122 v4
+	b[8] = (b[8] & 0x3f) | 0x80
+	s := hex.EncodeToString(b)
+	return fmt.Sprintf("%s-%s-%s-%s-%s", s[0:8], s[8:12], s[12:16], s[16:20], s[20:32])
+}
+
+// langCodeToOneshot translates DeepL's uppercase codes (DE, EN, ZH, ...)
+// to the lowercase BCP-47-ish codes the oneshot endpoint requires (de,
+// en-US, zh-Hans, ...). Unknown codes fall through lowercased.
 var langCodeToOneshot = map[string]string{
 	"AR": "ar", "BG": "bg", "CS": "cs", "DA": "da", "DE": "de", "EL": "el",
 	"EN": "en-US", "EN-GB": "en-GB", "EN-US": "en-US",
@@ -59,26 +94,70 @@ func toOneshotLang(code string) string {
 	return strings.ToLower(code)
 }
 
-// oneshotResponse is the JSON shape returned by /v1/translate.
-type oneshotResponse struct {
-	Translations []struct {
-		DetectedSourceLanguage string `json:"detected_source_language"`
-		Text                   string `json:"text"`
-	} `json:"translations"`
+// appInformation matches the snake_case shape produced by background.js
+// Wo({isSnakeCase: true}). Values are pinned to the same Chrome version
+// as the TLS handshake so the request tells one consistent story.
+type appInformation struct {
+	OS         string `json:"os"`
+	OSVersion  string `json:"os_version"`
+	AppVersion string `json:"app_version"`
+	AppBuild   string `json:"app_build"`
+	InstanceID string `json:"instance_id"`
 }
 
-// callOneshot POSTs the prepared body and returns the parsed JSON.
-// `bearerToken` is empty for anonymous (free) requests, in which case the
-// extension sends the literal string "None" — replicate that exactly, because
-// omitting the header changes the server's auth-handling branch.
-func callOneshot(endpoint string, body []byte, bearerToken, proxyURL string) (gjson.Result, int, error) {
+// oneshotRequest mirrors the body assembled in background.js IN(...).
+// Field order matches the extension's object literal so the serialized
+// JSON is byte-identical (encoding/json honours struct field order).
+type oneshotRequest struct {
+	Text           []string       `json:"text"`
+	TargetLang     string         `json:"target_lang"`
+	SourceLang     string         `json:"source_lang,omitempty"`
+	UsageType      string         `json:"usage_type"`
+	AppInformation appInformation `json:"app_information"`
+}
+
+// newOneshotClient configures a req.Client whose outbound profile matches
+// a chrome-extension service-worker fetch() byte-for-byte where it can.
+// ImpersonateChrome gives us the Chrome 120 TLS ClientHello, HTTP/2
+// SETTINGS, pseudo/header order, and a sec-ch-ua/user-agent set tied to
+// the same version. It also installs a navigation-flavoured set of common
+// headers (pragma, cache-control, upgrade-insecure-requests, sec-fetch-user)
+// that a fetch() never emits — wipe those so the WAF cannot tell us apart
+// on that axis.
+func newOneshotClient(proxyURL string) (*req.Client, error) {
 	client := req.C().ImpersonateChrome()
+	for _, h := range []string{
+		"Pragma",
+		"Cache-Control",
+		"Upgrade-Insecure-Requests",
+		"Sec-Fetch-User",
+	} {
+		client.Headers.Del(h)
+	}
+	// Chrome 120 fetch() advertises gzip/deflate/br (zstd only appeared
+	// as a default in Chrome 123+). req's default of just "gzip" is a
+	// distinguishable signal — match Chrome explicitly.
+	client.SetCommonHeader("Accept-Encoding", "gzip, deflate, br")
+
 	if proxyURL != "" {
-		proxy, err := url.Parse(proxyURL)
+		u, err := url.Parse(proxyURL)
 		if err != nil {
-			return gjson.Result{}, 0, err
+			return nil, err
 		}
-		client.SetProxyURL(proxy.String())
+		client.SetProxyURL(u.String())
+	}
+	return client, nil
+}
+
+// callOneshot POSTs to the oneshot endpoint and returns the parsed JSON.
+// For anonymous traffic bearerToken is empty and we send the literal
+// header `Authorization: None` — replicating the extension's JO() wrapper
+// exactly. Omitting that header instead would put the request on a
+// different server-side auth branch.
+func callOneshot(endpoint string, body []byte, bearerToken, proxyURL string) (gjson.Result, int, error) {
+	client, err := newOneshotClient(proxyURL)
+	if err != nil {
+		return gjson.Result{}, 0, err
 	}
 
 	authValue := "None"
@@ -87,31 +166,50 @@ func callOneshot(endpoint string, body []byte, bearerToken, proxyURL string) (gj
 	}
 
 	resp, err := client.R().
+		DisableAutoReadResponse().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Accept", "*/*").
 		SetHeader("Authorization", authValue).
-		SetHeader("Origin", "https://www.deepl.com").
-		SetHeader("Referer", "https://www.deepl.com/").
-		SetHeader("Sec-Fetch-Site", "same-site").
+		SetHeader("Origin", "chrome-extension://"+chromeExtensionID).
+		SetHeader("Sec-Fetch-Site", "cross-site").
 		SetHeader("Sec-Fetch-Mode", "cors").
 		SetHeader("Sec-Fetch-Dest", "empty").
-		SetBody(bytes.NewReader(body)).
+		SetBodyBytes(body). // SetBodyBytes pins Content-Length; using an
+		// io.Reader instead forces Transfer-Encoding: chunked, which a
+		// real fetch() with JSON.stringify body never emits.
 		Post(endpoint)
 	if err != nil {
 		return gjson.Result{}, 0, err
 	}
+	defer resp.Body.Close()
 
-	raw, err := resp.ToBytes()
+	// Once we set Accept-Encoding ourselves, Go's HTTP stack stops
+	// transparently decompressing, so handle gzip/deflate/br by hand.
+	var reader io.Reader = resp.Body
+	switch strings.ToLower(resp.Header.Get("Content-Encoding")) {
+	case "gzip":
+		gr, err := gzip.NewReader(resp.Body)
+		if err != nil {
+			return gjson.Result{}, resp.StatusCode, fmt.Errorf("gzip reader: %w", err)
+		}
+		defer gr.Close()
+		reader = gr
+	case "deflate":
+		reader = flate.NewReader(resp.Body)
+	case "br":
+		reader = brotli.NewReader(resp.Body)
+	}
+	raw, err := io.ReadAll(reader)
 	if err != nil {
-		return gjson.Result{}, resp.StatusCode, fmt.Errorf("failed to read response body: %w", err)
+		return gjson.Result{}, resp.StatusCode, fmt.Errorf("read response body: %w", err)
 	}
 	return gjson.ParseBytes(raw), resp.StatusCode, nil
 }
 
-// TranslateByDeepLX performs translation via DeepL's oneshot endpoint.
-// Passing dlSession switches to the Pro endpoint; the value is sent verbatim
-// as the Bearer token, so callers must supply an OAuth access token (not the
-// legacy `dl_session` cookie) when using Pro.
+// TranslateByDeepLX performs translation via the DeepL oneshot endpoint.
+// Passing dlSession switches to the Pro endpoint; the value is sent
+// verbatim as the Bearer token (i.e. it must be an OAuth access token,
+// not the legacy dl_session cookie).
 func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, proxyURL string, dlSession string) (DeepLXTranslationResult, error) {
 	if text == "" {
 		return DeepLXTranslationResult{
@@ -120,14 +218,22 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 		}, nil
 	}
 
-	reqBody := map[string]any{
-		"text":        []string{text},
-		"target_lang": toOneshotLang(targetLang),
+	reqStruct := oneshotRequest{
+		Text:       []string{text},
+		TargetLang: toOneshotLang(targetLang),
+		UsageType:  "Translate",
+		AppInformation: appInformation{
+			OS:         "brex_macOS",
+			OSVersion:  "brex_chrome_" + impersonatedChromeMajor + ".0.0.0",
+			AppVersion: chromeExtensionVersion,
+			AppBuild:   "chrome_web_store",
+			InstanceID: instanceID,
+		},
 	}
 	if sourceLang != "" && !strings.EqualFold(sourceLang, "auto") {
-		reqBody["source_lang"] = toOneshotLang(sourceLang)
+		reqStruct.SourceLang = toOneshotLang(sourceLang)
 	}
-	bodyBytes, _ := json.Marshal(reqBody)
+	bodyBytes, _ := json.Marshal(reqStruct)
 
 	endpoint := oneshotFreeEndpoint
 	if dlSession != "" {
@@ -179,9 +285,7 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 		}, nil
 	}
 
-	detected := translations[0].Get("detected_source_language").String()
-	if detected != "" {
-		// Normalize back to DeepL-style uppercase for response continuity.
+	if detected := translations[0].Get("detected_source_language").String(); detected != "" {
 		sourceLang = strings.ToUpper(detected)
 	}
 

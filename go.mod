@@ -3,6 +3,7 @@ module github.com/OwO-Network/DeepLX
 go 1.25.0
 
 require (
+	github.com/andybalholm/brotli v1.2.0
 	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-gonic/gin v1.11.0
 	github.com/imroc/req/v3 v3.57.0
@@ -10,7 +11,6 @@ require (
 )
 
 require (
-	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.15.0 // indirect
 	github.com/bytedance/sonic/loader v0.5.0 // indirect
