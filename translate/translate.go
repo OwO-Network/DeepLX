@@ -21,8 +21,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/andybalholm/brotli"
@@ -60,6 +62,36 @@ const (
 // install: stable for the life of the process, reused on every request.
 // Rotating it per-request would be a far stronger signal than reusing one.
 var instanceID = newInstanceID()
+
+// A real extension fetch() inherits whatever cookies the browser has
+// accumulated on .deepl.com. A cold visit to www.deepl.com sets
+// userCountry=<iso2> and verifiedBot=false; users who have ever opened
+// the site additionally have _ga / _ga_<id> from analytics JS. We share
+// a process-wide cookie jar so every oneshot POST automatically carries
+// whatever the warmup GET picked up.
+var (
+	cookieJar     http.CookieJar
+	cookieJarOnce sync.Once
+	cookieWarmer  sync.Once
+)
+
+func sharedCookieJar() http.CookieJar {
+	cookieJarOnce.Do(func() {
+		j, _ := cookiejar.New(nil)
+		cookieJar = j
+	})
+	return cookieJar
+}
+
+// warmCookies primes the shared jar by GETting www.deepl.com once.
+// The Set-Cookie response (userCountry / verifiedBot) lands on .deepl.com,
+// which is the eTLD+1 of oneshot-free.www.deepl.com, so subsequent POSTs
+// to the oneshot endpoint will carry those cookies automatically.
+func warmCookies(client *req.Client) {
+	cookieWarmer.Do(func() {
+		_, _ = client.R().Get("https://www.deepl.com/translator")
+	})
+}
 
 func newInstanceID() string {
 	b := make([]byte, 16)
@@ -125,7 +157,7 @@ type oneshotRequest struct {
 // that a fetch() never emits — wipe those so the WAF cannot tell us apart
 // on that axis.
 func newOneshotClient(proxyURL string) (*req.Client, error) {
-	client := req.C().ImpersonateChrome()
+	client := req.C().ImpersonateChrome().SetCookieJar(sharedCookieJar())
 	for _, h := range []string{
 		"Pragma",
 		"Cache-Control",
@@ -159,6 +191,7 @@ func callOneshot(endpoint string, body []byte, bearerToken, proxyURL string) (gj
 	if err != nil {
 		return gjson.Result{}, 0, err
 	}
+	warmCookies(client) // no-op after the first translation in the process
 
 	authValue := "None"
 	if bearerToken != "" {
