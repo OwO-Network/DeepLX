@@ -15,9 +15,11 @@ package translate
 import (
 	"compress/flate"
 	"compress/gzip"
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -27,6 +29,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/andybalholm/brotli"
 	"github.com/imroc/req/v3"
@@ -57,6 +60,26 @@ const (
 	impersonatedChromeMajor = "120"
 	chromeExtensionVersion  = "1.86.0"
 	chromeExtensionID       = "cofdbpoegempjloogbagkncekinflcnj"
+
+	// oneshot enforces a 1500-character hard cap on the total length of
+	// the `text` array (sum across all items). Source: the extension's
+	// own `G.notLoggedIn = 1500` constant in background.js. The server
+	// returns 400 `{"errors":{"text":["text exceeds maximum length"]}}`
+	// past this; bail early to spare the upstream and give the caller a
+	// faster, less ambiguous error.
+	maxFreeTextLength = 1500
+
+	// oneshotTimeout caps how long we wait on a single translate request.
+	// Without an explicit timeout, a hung upstream connection would
+	// dangle indefinitely and the caller (e.g. browser extension) would
+	// sit on a spinner forever — observed in the field.
+	oneshotTimeout = 20 * time.Second
+
+	// warmupTimeout caps the initial GET to www.deepl.com that seeds the
+	// cookie jar. Shorter than oneshotTimeout because warmup typically
+	// completes in well under a second; we'd rather skip a slow warmup
+	// (cookies are best-effort anyway) than block the first translation.
+	warmupTimeout = 5 * time.Second
 )
 
 // instanceID mirrors the UUID the extension persists in chrome.storage on
@@ -90,7 +113,9 @@ func sharedCookieJar() http.CookieJar {
 // to the oneshot endpoint will carry those cookies automatically.
 func warmCookies(client *req.Client) {
 	cookieWarmer.Do(func() {
-		_, _ = client.R().Get("https://www.deepl.com/translator")
+		ctx, cancel := context.WithTimeout(context.Background(), warmupTimeout)
+		defer cancel()
+		_, _ = client.R().SetContext(ctx).Get("https://www.deepl.com/translator")
 	})
 }
 
@@ -240,7 +265,7 @@ type oneshotRequest struct {
 // that a fetch() never emits — wipe those so the WAF cannot tell us apart
 // on that axis.
 func newOneshotClient(proxyURL string) (*req.Client, error) {
-	client := req.C().ImpersonateChrome().SetCookieJar(sharedCookieJar())
+	client := req.C().ImpersonateChrome().SetCookieJar(sharedCookieJar()).SetTimeout(oneshotTimeout)
 	for _, h := range []string{
 		"Pragma",
 		"Cache-Control",
@@ -349,6 +374,13 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 		}, nil
 	}
 
+	if n := utf8.RuneCountInString(text); n > maxFreeTextLength {
+		return DeepLXTranslationResult{
+			Code:    http.StatusRequestEntityTooLarge,
+			Message: fmt.Sprintf("text exceeds maximum length: %d characters (anonymous oneshot limit is %d)", n, maxFreeTextLength),
+		}, nil
+	}
+
 	reqStruct := oneshotRequest{
 		Text:       []string{text},
 		TargetLang: resolvedTarget,
@@ -372,6 +404,16 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 	id := time.Now().UnixMilli()
 	result, status, err := callOneshot(endpoint, bodyBytes, dlSession, proxyURL)
 	if err != nil {
+		// Map upstream timeouts to 504 so callers can distinguish "DeepL
+		// took too long" from other 503 failure modes (DNS, TLS, etc.).
+		var ue *url.Error
+		if errors.Is(err, context.DeadlineExceeded) || (errors.As(err, &ue) && ue.Timeout()) {
+			return DeepLXTranslationResult{
+				ID:      id,
+				Code:    http.StatusGatewayTimeout,
+				Message: fmt.Sprintf("upstream DeepL request timed out after %s", oneshotTimeout),
+			}, nil
+		}
 		return DeepLXTranslationResult{
 			ID:      id,
 			Code:    http.StatusServiceUnavailable,
