@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -104,26 +105,108 @@ func newInstanceID() string {
 	return fmt.Sprintf("%s-%s-%s-%s-%s", s[0:8], s[8:12], s[12:16], s[16:20], s[20:32])
 }
 
-// langCodeToOneshot translates DeepL's uppercase codes (DE, EN, ZH, ...)
-// to the lowercase BCP-47-ish codes the oneshot endpoint requires (de,
-// en-US, zh-Hans, ...). Unknown codes fall through lowercased.
-var langCodeToOneshot = map[string]string{
+// Language code tables mirror the bundled list in the extension's
+// background.js (arrays `y` ~offset 6000 for the full target-capable
+// set, `A` for source-only aliases). Keys are the uppercase forms
+// callers pass; values are the lowercase BCP-47-ish forms the oneshot
+// endpoint expects ("de", "en-US", "zh-Hans", ...).
+//
+// targetLangMap is what the API accepts as `target_lang`. EN and PT
+// are intentionally absent — DeepL deprecated them as target codes in
+// favour of EN-US/EN-GB and PT-BR/PT-PT, and the extension's y array
+// reflects that. We accept EN/PT as a backward-compat convenience and
+// resolve them to the regional default (en-US, pt-BR).
+var targetLangMap = map[string]string{
 	"AR": "ar", "BG": "bg", "CS": "cs", "DA": "da", "DE": "de", "EL": "el",
-	"EN": "en-US", "EN-GB": "en-GB", "EN-US": "en-US",
-	"ES": "es", "ET": "et", "FI": "fi", "FR": "fr", "HU": "hu",
-	"ID": "id", "IT": "it", "JA": "ja", "KO": "ko", "LT": "lt", "LV": "lv",
-	"NB": "nb", "NL": "nl", "PL": "pl",
-	"PT": "pt-BR", "PT-BR": "pt-BR", "PT-PT": "pt-PT",
+	"EN-GB": "en-GB", "EN-US": "en-US",
+	"ES": "es", "ES-419": "es-419", "ET": "et", "FI": "fi", "FR": "fr",
+	"HE": "he", "HU": "hu", "ID": "id", "IT": "it", "JA": "ja", "KO": "ko",
+	"LT": "lt", "LV": "lv", "NB": "nb", "NL": "nl", "PL": "pl",
+	"PT-BR": "pt-BR", "PT-PT": "pt-PT",
 	"RO": "ro", "RU": "ru", "SK": "sk", "SL": "sl", "SV": "sv",
-	"TR": "tr", "UK": "uk",
+	"TR": "tr", "UK": "uk", "VI": "vi",
 	"ZH": "zh-Hans", "ZH-HANS": "zh-Hans", "ZH-HANT": "zh-Hant",
+	// Convenience aliases for legacy callers.
+	"EN": "en-US",
+	"PT": "pt-BR",
 }
 
-func toOneshotLang(code string) string {
-	if v, ok := langCodeToOneshot[strings.ToUpper(code)]; ok {
-		return v
+// sourceLangMap is what the API accepts as `source_lang`. It is a
+// superset of targetLangMap: EN and PT are first-class source codes
+// (extension array `A`) mapping to the generic "en"/"pt" — used when
+// the caller knows the input is English/Portuguese but does not want
+// to commit to a regional variant.
+var sourceLangMap = func() map[string]string {
+	m := make(map[string]string, len(targetLangMap)+2)
+	for k, v := range targetLangMap {
+		m[k] = v
 	}
-	return strings.ToLower(code)
+	m["EN"] = "en"
+	m["PT"] = "pt"
+	return m
+}()
+
+// resolveTargetLang validates and normalizes a user-supplied target
+// language code. Returns "" and a non-nil error if the code is empty,
+// "auto", or otherwise not in the supported set.
+func resolveTargetLang(code string) (string, error) {
+	if code == "" {
+		return "", fmt.Errorf("target_lang is required")
+	}
+	if strings.EqualFold(code, "auto") {
+		return "", fmt.Errorf("target_lang cannot be \"auto\"; pick one of: %s", supportedTargetLangsList())
+	}
+	if v, ok := targetLangMap[strings.ToUpper(code)]; ok {
+		return v, nil
+	}
+	return "", fmt.Errorf("unsupported target_lang %q; valid codes: %s", code, supportedTargetLangsList())
+}
+
+// resolveSourceLang validates and normalizes a user-supplied source
+// language code. An empty string or "auto" is allowed and returns
+// ("", nil) so the caller omits source_lang and lets the server
+// autodetect.
+func resolveSourceLang(code string) (string, error) {
+	if code == "" || strings.EqualFold(code, "auto") {
+		return "", nil
+	}
+	if v, ok := sourceLangMap[strings.ToUpper(code)]; ok {
+		return v, nil
+	}
+	return "", fmt.Errorf("unsupported source_lang %q; valid codes: %s (or \"auto\")", code, supportedSourceLangsList())
+}
+
+// supportedTargetLangsList / supportedSourceLangsList return a sorted,
+// comma-separated rendering of the supported codes for use in error
+// messages. Cached at first call.
+var (
+	targetLangsListOnce sync.Once
+	targetLangsList     string
+	sourceLangsListOnce sync.Once
+	sourceLangsList     string
+)
+
+func supportedTargetLangsList() string {
+	targetLangsListOnce.Do(func() {
+		targetLangsList = sortedKeys(targetLangMap)
+	})
+	return targetLangsList
+}
+
+func supportedSourceLangsList() string {
+	sourceLangsListOnce.Do(func() {
+		sourceLangsList = sortedKeys(sourceLangMap)
+	})
+	return sourceLangsList
+}
+
+func sortedKeys(m map[string]string) string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return strings.Join(keys, ", ")
 }
 
 // appInformation matches the snake_case shape produced by background.js
@@ -251,9 +334,25 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 		}, nil
 	}
 
+	resolvedTarget, err := resolveTargetLang(targetLang)
+	if err != nil {
+		return DeepLXTranslationResult{
+			Code:    http.StatusBadRequest,
+			Message: err.Error(),
+		}, nil
+	}
+	resolvedSource, err := resolveSourceLang(sourceLang)
+	if err != nil {
+		return DeepLXTranslationResult{
+			Code:    http.StatusBadRequest,
+			Message: err.Error(),
+		}, nil
+	}
+
 	reqStruct := oneshotRequest{
 		Text:       []string{text},
-		TargetLang: toOneshotLang(targetLang),
+		TargetLang: resolvedTarget,
+		SourceLang: resolvedSource, // empty = autodetect; omitempty drops the field
 		UsageType:  "Translate",
 		AppInformation: appInformation{
 			OS:         "brex_macOS",
@@ -262,9 +361,6 @@ func TranslateByDeepLX(sourceLang, targetLang, text string, tagHandling string, 
 			AppBuild:   "chrome_web_store",
 			InstanceID: instanceID,
 		},
-	}
-	if sourceLang != "" && !strings.EqualFold(sourceLang, "auto") {
-		reqStruct.SourceLang = toOneshotLang(sourceLang)
 	}
 	bodyBytes, _ := json.Marshal(reqStruct)
 
