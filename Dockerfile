@@ -6,5 +6,8 @@ RUN CGO_ENABLED=0 go build -a -installsuffix cgo -o deeplx .
 
 FROM alpine:latest
 WORKDIR /app
-COPY --from=builder /go/src/github.com/OwO-Network/DeepLX/deeplx /app/deeplx
-CMD ["/app/deeplx"]
+RUN addgroup -S deeplx && adduser -h /app -G deeplx -SH deeplx
+USER deeplx
+COPY --from=builder --chown=deeplx /go/src/github.com/OwO-Network/DeepLX/deeplx /app/deeplx
+EXPOSE 1188
+ENTRYPOINT ["/app/deeplx"]
