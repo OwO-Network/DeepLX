@@ -16,7 +16,20 @@ install_deeplx(){
         exit 1
     fi
     echo -e "DeepLX latest version: ${last_version}, Start install..."
-    wget -q -N --no-check-certificate -O /usr/bin/deeplx https://github.com/OwO-Network/DeepLX/releases/download/${last_version}/deeplx_linux_amd64
+
+    arch=$(uname -m)
+    case "${arch}" in
+        x86_64 | amd64) file_arch="amd64" ;;
+        aarch64 | arm64) file_arch="arm64" ;;
+        i386 | i686) file_arch="386" ;;
+        mips) file_arch="mips" ;;
+        *)
+            echo -e "${red}Unsupported architecture: ${arch}${plain}"
+            exit 1
+            ;;
+    esac
+
+    wget -q -N --no-check-certificate -O /usr/bin/deeplx https://github.com/OwO-Network/DeepLX/releases/download/${last_version}/deeplx_linux_${file_arch}
 
     chmod +x /usr/bin/deeplx
     wget -q -N --no-check-certificate -O /etc/systemd/system/deeplx.service https://raw.githubusercontent.com/OwO-Network/DeepLX/main/deeplx.service
