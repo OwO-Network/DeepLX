@@ -1,0 +1,23 @@
+name: E2E (DeepL compatibility)
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Daily canary: catches the day DeepL changes its anti-bot scheme and
+    # DeepLX starts 429-ing, before users pile in with issues.
+    - cron: "17 2 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run live DeepL E2E tests
+        run: go test -tags=e2e -v -timeout=10m ./translate/...
