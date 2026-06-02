@@ -5,11 +5,28 @@ on:
   pull_request:
 
 name: Release
+
 jobs:
-        
+
   Build:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { goos: darwin,  goarch: amd64 }
+          - { goos: darwin,  goarch: arm64 }
+          - { goos: linux,   goarch: '386' }
+          - { goos: linux,   goarch: amd64 }
+          - { goos: linux,   goarch: arm64 }
+          - { goos: linux,   goarch: mips }
+          - { goos: openbsd, goarch: amd64 }
+          - { goos: openbsd, goarch: arm64 }
+          - { goos: freebsd, goarch: amd64 }
+          - { goos: freebsd, goarch: arm64 }
+          - { goos: windows, goarch: '386' }
+          - { goos: windows, goarch: amd64 }
     steps:
       - uses: actions/checkout@v4
 
@@ -17,12 +34,40 @@ jobs:
         with:
           go-version: "1.24.2"
 
-      - run: bash .cross_compile.sh
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "0"
+        run: |
+          mkdir -p dist
+          BINARY="dist/deeplx_${GOOS}_${GOARCH}"
+          if [ "${GOOS}" = "windows" ]; then
+            BINARY="${BINARY}.exe"
+          fi
+          go build -trimpath -ldflags "-w -s" -o "${BINARY}" .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deeplx_${{ matrix.goos }}_${{ matrix.goarch }}
+          path: dist/*
+          if-no-files-found: error
+
+  Release:
+    needs: Build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
 
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
           draft: false
           generate_release_notes: true
-          files: |
-            dist/*
+          files: dist/*
