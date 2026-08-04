@@ -15,14 +15,14 @@
 [![Go Version][2]](https://github.com/OwO-Network/DLX/blob/main/go.mod)
 [![Go Report][3]](https://goreportcard.com/badge/github.com/OwO-Network/DLX)
 [![GitHub License][4]](https://github.com/OwO-Network/DLX/blob/main/LICENSE)
-[![Docker Pulls][5]](https://hub.docker.com/r/missuo/dlx)
+[![Docker Pulls][5]](https://hub.docker.com/r/missuo/deeplx)
 [![Releases][6]](https://github.com/OwO-Network/DLX/releases)
 
 [1]: https://img.shields.io/github/actions/workflow/status/OwO-Network/DLX/release.yaml?logo=github
 [2]: https://img.shields.io/github/go-mod/go-version/OwO-Network/DLX?logo=go
 [3]: https://goreportcard.com/badge/github.com/OwO-Network/DLX
 [4]: https://img.shields.io/github/license/OwO-Network/DLX
-[5]: https://img.shields.io/docker/pulls/missuo/dlx?logo=docker
+[5]: https://img.shields.io/docker/pulls/missuo/deeplx?logo=docker
 [6]: https://img.shields.io/github/v/release/OwO-Network/DLX?logo=smartthings
 
 > [!IMPORTANT]
@@ -40,8 +40,11 @@ DLX is a self-hosted translation API server written in Go. It exposes a simple H
 
 ### Docker
 
+Docker Hub and GHCR image names remain `deeplx` (only the GitHub repository was renamed to DLX):
+
 ```bash
-docker run -d -p 1188:1188 ghcr.io/owo-network/dlx:latest
+docker run -d -p 1188:1188 ghcr.io/owo-network/deeplx:latest
+# or: docker run -d -p 1188:1188 missuo/deeplx:latest
 ```
 
 Or use the provided [`compose.yaml`](compose.yaml):
@@ -52,10 +55,10 @@ docker compose up -d
 
 ### Binary
 
-Download the binary for your platform from [Releases](https://github.com/OwO-Network/DLX/releases) and run it:
+Download the binary for your platform from [Releases](https://github.com/OwO-Network/DLX/releases) and run it (artifact names remain `deeplx_*`):
 
 ```bash
-./dlx
+./deeplx
 ```
 
 ### Translate

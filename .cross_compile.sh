@@ -11,7 +11,7 @@
 ### 
 set -e
 
-DIST_PREFIX="dlx"
+DIST_PREFIX="deeplx"
 DEBUG_MODE=${2}
 TARGET_DIR="dist"
 PLATFORMS="darwin/amd64 darwin/arm64 linux/386 linux/amd64 linux/arm64 linux/mips openbsd/amd64 openbsd/arm64 freebsd/amd64 freebsd/arm64 windows/386 windows/amd64"

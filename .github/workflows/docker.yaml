@@ -8,8 +8,9 @@ on:
       - 'v*'
 
 env:
-  DOCKER_IMAGE_NAME: missuo/dlx
-  GHCR_IMAGE_NAME: ${{ github.repository }}
+  # Keep historical package names (deeplx); only the GitHub repo was renamed to DLX.
+  DOCKER_IMAGE_NAME: missuo/deeplx
+  GHCR_IMAGE_NAME: owo-network/deeplx
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
   DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
   GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}

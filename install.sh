@@ -2,7 +2,7 @@
  # @Author: Vincent Young
  # @Date: 2023-02-12 09:53:21
  # @LastEditors: Vincent Yang
- # @LastEditTime: 2026-07-08 00:00:00
+ # @LastEditTime: 2026-08-04 00:00:00
  # @FilePath: /DLX/install.sh
  # @Telegram: https://t.me/missuo
  #
@@ -29,13 +29,14 @@ install_dlx(){
             ;;
     esac
 
-    wget -q -N --no-check-certificate -O /usr/bin/dlx https://github.com/OwO-Network/DLX/releases/download/${last_version}/dlx_linux_${file_arch}
+    # Release artifact names remain deeplx_* (only the GitHub repo was renamed).
+    wget -q -N --no-check-certificate -O /usr/bin/deeplx https://github.com/OwO-Network/DLX/releases/download/${last_version}/deeplx_linux_${file_arch}
 
-    chmod +x /usr/bin/dlx
-    wget -q -N --no-check-certificate -O /etc/systemd/system/dlx.service https://raw.githubusercontent.com/OwO-Network/DLX/main/dlx.service
+    chmod +x /usr/bin/deeplx
+    wget -q -N --no-check-certificate -O /etc/systemd/system/deeplx.service https://raw.githubusercontent.com/OwO-Network/DLX/main/deeplx.service
     systemctl daemon-reload
-    systemctl enable dlx
-    systemctl start dlx
+    systemctl enable deeplx
+    systemctl start deeplx
     echo -e "Installed successfully, listening at 0.0.0.0:1188"
 }
 install_dlx

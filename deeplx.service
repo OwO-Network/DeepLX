@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 Restart=always
 WorkingDirectory=/usr/bin/
-ExecStart=/usr/bin/dlx
+ExecStart=/usr/bin/deeplx
 
 [Install]
 WantedBy=multi-user.target

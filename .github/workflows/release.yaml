@@ -41,7 +41,7 @@ jobs:
           CGO_ENABLED: "0"
         run: |
           mkdir -p dist
-          BINARY="dist/dlx_${GOOS}_${GOARCH}"
+          BINARY="dist/deeplx_${GOOS}_${GOARCH}"
           if [ "${GOOS}" = "windows" ]; then
             BINARY="${BINARY}.exe"
           fi
@@ -50,7 +50,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dlx_${{ matrix.goos }}_${{ matrix.goarch }}
+          name: deeplx_${{ matrix.goos }}_${{ matrix.goarch }}
           path: dist/*
           if-no-files-found: error
 

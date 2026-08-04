@@ -15,37 +15,37 @@ fi
 uninstall_dlx() {
     echo -e "${green}Starting DLX uninstallation...${plain}"
 
-    # 1. Stop and disable the DLX service
-    if systemctl is-active --quiet dlx; then
-        echo -e "${yellow}Stopping DLX service...${plain}"
-        systemctl stop dlx
+    # 1. Stop and disable the deeplx service (historical unit name)
+    if systemctl is-active --quiet deeplx; then
+        echo -e "${yellow}Stopping deeplx service...${plain}"
+        systemctl stop deeplx
     else
-        echo -e "${yellow}DLX service is not running or not found.${plain}"
+        echo -e "${yellow}deeplx service is not running or not found.${plain}"
     fi
 
-    if systemctl is-enabled --quiet dlx; then
-        echo -e "${yellow}Disabling DLX service from starting on boot...${plain}"
-        systemctl disable dlx
+    if systemctl is-enabled --quiet deeplx; then
+        echo -e "${yellow}Disabling deeplx service from starting on boot...${plain}"
+        systemctl disable deeplx
     else
-        echo -e "${yellow}DLX service is not enabled.${plain}"
+        echo -e "${yellow}deeplx service is not enabled.${plain}"
     fi
 
     # 2. Remove the systemd service file
-    if [ -f /etc/systemd/system/dlx.service ]; then
-        echo -e "${yellow}Removing DLX systemd service file (/etc/systemd/system/dlx.service)...${plain}"
-        rm -f /etc/systemd/system/dlx.service
+    if [ -f /etc/systemd/system/deeplx.service ]; then
+        echo -e "${yellow}Removing deeplx systemd service file (/etc/systemd/system/deeplx.service)...${plain}"
+        rm -f /etc/systemd/system/deeplx.service
         systemctl daemon-reload
         echo -e "${green}Systemd daemon reloaded.${plain}"
     else
-        echo -e "${yellow}DLX systemd service file not found, skipping removal.${plain}"
+        echo -e "${yellow}deeplx systemd service file not found, skipping removal.${plain}"
     fi
 
-    # 3. Remove the DLX executable
-    if [ -f /usr/bin/dlx ]; then
-        echo -e "${yellow}Removing DLX executable (/usr/bin/dlx)...${plain}"
-        rm -f /usr/bin/dlx
+    # 3. Remove the executable (release binary name remains deeplx)
+    if [ -f /usr/bin/deeplx ]; then
+        echo -e "${yellow}Removing deeplx executable (/usr/bin/deeplx)...${plain}"
+        rm -f /usr/bin/deeplx
     else
-        echo -e "${yellow}DLX executable not found, skipping removal.${plain}"
+        echo -e "${yellow}deeplx executable not found, skipping removal.${plain}"
     fi
 
     echo -e "${green}DLX uninstallation complete.${plain}"

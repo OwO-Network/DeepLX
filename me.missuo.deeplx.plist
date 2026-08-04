@@ -3,12 +3,12 @@
 <plist version="1.0">
 <dict>
 	<key>Label</key>
-	<string>me.missuo.dlx</string>
+	<string>me.missuo.deeplx</string>
 	<key>KeepAlive</key>
 	<true/>
 	<key>ProgramArguments</key>
 	<array>
-		<string>/usr/local/bin/dlx</string>
+		<string>/usr/local/bin/deeplx</string>
 	</array>
 	<key>RunAtLoad</key>
 	<true/>
