@@ -61,9 +61,9 @@ const (
 	iosAppBuild   = "5443737"
 	iosBundleID   = "com.linguee.DeepLMobileTranslator"
 	// Stable OS version reported in app_information + x-app-os-version.
-	// HelloIOS_Auto does not pin a specific iOS minor; 18.5 is a current
-	// shipping major that matches MinimumOSVersion 17.0+ of the IPA.
-	iosOSVersion = "18.5"
+	// HelloIOS_Auto does not pin a specific iOS minor; pin a fixed value
+	// so UA / x-app-os-version / app_information stay consistent.
+	iosOSVersion = "27.0"
 
 	// oneshot enforces a 1500-character hard cap on the total length of
 	// the `text` array for anonymous traffic (same limit the Chrome
