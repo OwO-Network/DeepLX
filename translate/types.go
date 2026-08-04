@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2024-09-16 11:59:24
  * @LastEditors: Vincent Yang
- * @LastEditTime: 2026-05-22 00:00:00
+ * @LastEditTime: 2026-08-04 00:00:00
  * @FilePath: /DLX/translate/types.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -14,8 +14,8 @@ package translate
 
 // DLXTranslationResult is the public response shape consumed by the HTTP
 // handlers in the service package. The structure predates the migration to
-// the oneshot endpoint; Alternatives is now always empty because oneshot does
-// not return alternative translations, and ID is synthesized from time.
+// the iOS oneshot endpoint; Alternatives is now always empty because oneshot
+// does not return alternative translations, and ID is synthesized from time.
 type DLXTranslationResult struct {
 	Code         int      `json:"code"`
 	ID           int64    `json:"id"`

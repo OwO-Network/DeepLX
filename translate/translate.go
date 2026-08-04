@@ -2,7 +2,7 @@
  * @Author: Vincent Young
  * @Date: 2024-09-16 11:59:24
  * @LastEditors: Vincent Yang
- * @LastEditTime: 2026-05-22 00:00:00
+ * @LastEditTime: 2026-08-04 00:00:00
  * @FilePath: /DLX/translate/translate.go
  * @Telegram: https://t.me/missuo
  * @GitHub: https://github.com/missuo
@@ -36,63 +36,64 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// DeepL's interactive web translator migrated to a SignalR/WebSocket
-// channel and the legacy LMT_handle_texts backend on www2.deepl.com now
-// 429s anonymous traffic within a handful of calls. The official Chrome
-// extension instead POSTs to a stateless "oneshot" endpoint that lives
-// on a separate rate-limit pool and accepts the literal header
-// `Authorization: None` for anonymous requests — that is what we target.
+// DeepL's interactive clients (web, Chrome extension, and the official iOS
+// app) all share the same stateless "oneshot" translate endpoint. The
+// legacy LMT_handle_texts backend on www2.deepl.com rate-limits anonymous
+// traffic hard; oneshot lives on a separate pool and accepts the literal
+// header `Authorization: None` for free requests.
 //
-// The request we send is reverse-engineered from the extension's
-// background.js (Chrome Web Store ID cofdbpoegempjloogbagkncekinflcnj):
-//   - URL builder   → mN() at ~offset 529948
-//   - body builder  → IN() at ~offset 531200
-//   - fetch wrapper → JO() at ~offset 508659
-//   - app metadata  → Wo() at ~offset 16500
+// Request shape below is reverse-engineered from DeepL iOS 26.42
+// (build 5443737, bundle com.linguee.DeepLMobileTranslator):
+//   - Free URL   → https://oneshot-free.www.deepl.com/v1/translate
+//   - Pro URL    → https://oneshot-pro.www.deepl.com/v1/translate
+//                  (iOS also constructs https://oneshot. + .pro.deepl.com/v1/translate)
+//   - Body       → OneShotTranslator + ItaClient.AppInformation
+//   - Headers    → ClientInfos.appHeaders (x-app-*) + Authorization
+//   - usage_type → ItaClient.OneShotUsageType.translate
 const (
 	oneshotFreeEndpoint = "https://oneshot-free.www.deepl.com/v1/translate"
 	oneshotProEndpoint  = "https://oneshot-pro.www.deepl.com/v1/translate"
 
-	// Pinned to the Chrome version utls bundles into req v3 (HelloChrome_120).
-	// Keep this in lockstep with the user-agent and app_information.os_version
-	// so the TLS handshake, UA, and self-reported browser version all agree —
-	// a mismatch on any one of those is a cheap signal for the WAF.
-	impersonatedChromeMajor = "120"
-	chromeExtensionVersion  = "1.86.0"
-	chromeExtensionID       = "cofdbpoegempjloogbagkncekinflcnj"
+	// Pinned to DeepL iOS IPA (Info.plist CFBundleShortVersionString /
+	// CFBundleVersion). Keep app_information in lockstep with the TLS
+	// fingerprint and User-Agent so the request tells one consistent story.
+	iosAppVersion = "26.42"
+	iosAppBuild   = "5443737"
+	iosBundleID   = "com.linguee.DeepLMobileTranslator"
+	// Stable OS version reported in app_information + x-app-os-version.
+	// HelloIOS_Auto does not pin a specific iOS minor; 18.5 is a current
+	// shipping major that matches MinimumOSVersion 17.0+ of the IPA.
+	iosOSVersion = "18.5"
 
 	// oneshot enforces a 1500-character hard cap on the total length of
-	// the `text` array (sum across all items). Source: the extension's
-	// own `G.notLoggedIn = 1500` constant in background.js. The server
-	// returns 400 `{"errors":{"text":["text exceeds maximum length"]}}`
-	// past this; bail early to spare the upstream and give the caller a
-	// faster, less ambiguous error.
+	// the `text` array for anonymous traffic (same limit the Chrome
+	// extension documents as G.notLoggedIn). Bail early to spare the
+	// upstream and give the caller a faster error.
 	maxFreeTextLength = 1500
 
 	// oneshotTimeout caps how long we wait on a single translate request.
-	// Without an explicit timeout, a hung upstream connection would
-	// dangle indefinitely and the caller (e.g. browser extension) would
-	// sit on a spinner forever — observed in the field.
 	oneshotTimeout = 20 * time.Second
 
 	// warmupTimeout caps the initial GET to www.deepl.com that seeds the
-	// cookie jar. Shorter than oneshotTimeout because warmup typically
-	// completes in well under a second; we'd rather skip a slow warmup
-	// (cookies are best-effort anyway) than block the first translation.
+	// cookie jar. Cookies are best-effort; skip a slow warmup rather than
+	// block the first translation.
 	warmupTimeout = 5 * time.Second
 )
 
-// instanceID mirrors the UUID the extension persists in chrome.storage on
-// install: stable for the life of the process, reused on every request.
-// Rotating it per-request would be a far stronger signal than reusing one.
+// instanceID mirrors the UUID the iOS app persists for analytics /
+// app_information.instance_id and x-app-instance-id: stable for the life
+// of the process, reused on every request. Rotating per-request is a
+// stronger bot signal than reusing one.
 var instanceID = newInstanceID()
 
-// A real extension fetch() inherits whatever cookies the browser has
-// accumulated on .deepl.com. A cold visit to www.deepl.com sets
-// userCountry=<iso2> and verifiedBot=false; users who have ever opened
-// the site additionally have _ga / _ga_<id> from analytics JS. We share
-// a process-wide cookie jar so every oneshot POST automatically carries
-// whatever the warmup GET picked up.
+// sessionID is sent as x-app-session-id (ClientInfos.appHeaders). Stable
+// for the process lifetime, independent of instanceID.
+var sessionID = newInstanceID()
+
+// A real iOS URLSession inherits whatever cookies the app has on
+// .deepl.com. A cold visit to www.deepl.com sets userCountry=<iso2> and
+// verifiedBot=false. Share a process-wide jar so every oneshot POST
+// carries whatever the warmup GET picked up.
 var (
 	cookieJar     http.CookieJar
 	cookieJarOnce sync.Once
@@ -101,10 +102,6 @@ var (
 
 // oneshotClients caches one req.Client per proxy URL so all translate
 // calls share the underlying TCP / TLS / HTTP/2 connection pool.
-// Creating a fresh req.Client per request meant a brand-new TLS
-// handshake every time (~200-400ms of overhead on top of DeepL's own
-// ~1.5s processing latency). Reusing the client lets keep-alive +
-// session tickets cut that to near zero on the warm path.
 var oneshotClients sync.Map // map[string]*req.Client
 
 func sharedCookieJar() http.CookieJar {
@@ -116,12 +113,8 @@ func sharedCookieJar() http.CookieJar {
 }
 
 // warmCookies primes the shared jar by GETting www.deepl.com once.
-// The Set-Cookie response (userCountry / verifiedBot) lands on .deepl.com,
-// which is the eTLD+1 of oneshot-free.www.deepl.com, so subsequent POSTs
-// to the oneshot endpoint will carry those cookies automatically. The
-// same request doubles as a TLS-handshake warmup: it leaves a live
-// HTTP/2 connection to www.deepl.com in the client pool, which the
-// first oneshot POST then resumes via TLS session tickets.
+// The Set-Cookie response lands on .deepl.com (eTLD+1 of oneshot-free),
+// so subsequent POSTs carry those cookies automatically.
 func warmCookies(client *req.Client) {
 	cookieWarmer.Do(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), warmupTimeout)
@@ -141,21 +134,22 @@ func newInstanceID() string {
 	return fmt.Sprintf("%s-%s-%s-%s-%s", s[0:8], s[8:12], s[12:16], s[16:20], s[20:32])
 }
 
-// Language code tables mirror the bundled list in the extension's
-// background.js (arrays `y` ~offset 6000 for the full target-capable
-// set, `A` for source-only aliases). Keys are the uppercase forms
-// callers pass; values are the lowercase BCP-47-ish forms the oneshot
-// endpoint expects ("de", "en-US", "zh-Hans", ...).
+// Language code tables mirror ItaClient.OutputLanguage / InputLanguage
+// (regional cases enUs, enGb, frCa, deCh, ptPt, ptBr, es419, zhHant, …)
+// plus the full target-capable set the oneshot endpoint accepts.
 //
-// targetLangMap is what the API accepts as `target_lang`. EN and PT
-// are intentionally absent — DeepL deprecated them as target codes in
-// favour of EN-US/EN-GB and PT-BR/PT-PT, and the extension's y array
-// reflects that. We accept EN/PT as a backward-compat convenience and
-// resolve them to the regional default (en-US, pt-BR).
+// Keys are the uppercase forms callers pass; values are the lowercase
+// BCP-47-ish forms oneshot expects ("de", "en-US", "zh-Hans", ...).
+//
+// EN and PT are intentionally absent as bare target codes — DeepL
+// deprecated them in favour of EN-US/EN-GB and PT-BR/PT-PT. We accept
+// EN/PT as a backward-compat convenience and resolve them to the
+// regional default (en-US, pt-BR).
 var targetLangMap = map[string]string{
-	"AR": "ar", "BG": "bg", "CS": "cs", "DA": "da", "DE": "de", "EL": "el",
+	"AR": "ar", "BG": "bg", "CS": "cs", "DA": "da", "DE": "de", "DE-CH": "de-CH",
+	"EL": "el",
 	"EN-GB": "en-GB", "EN-US": "en-US",
-	"ES": "es", "ES-419": "es-419", "ET": "et", "FI": "fi", "FR": "fr",
+	"ES": "es", "ES-419": "es-419", "ET": "et", "FI": "fi", "FR": "fr", "FR-CA": "fr-CA",
 	"HE": "he", "HU": "hu", "ID": "id", "IT": "it", "JA": "ja", "KO": "ko",
 	"LT": "lt", "LV": "lv", "NB": "nb", "NL": "nl", "PL": "pl",
 	"PT-BR": "pt-BR", "PT-PT": "pt-PT",
@@ -169,9 +163,7 @@ var targetLangMap = map[string]string{
 
 // sourceLangMap is what the API accepts as `source_lang`. It is a
 // superset of targetLangMap: EN and PT are first-class source codes
-// (extension array `A`) mapping to the generic "en"/"pt" — used when
-// the caller knows the input is English/Portuguese but does not want
-// to commit to a regional variant.
+// mapping to the generic "en"/"pt".
 var sourceLangMap = func() map[string]string {
 	m := make(map[string]string, len(targetLangMap)+2)
 	for k, v := range targetLangMap {
@@ -245,9 +237,8 @@ func sortedKeys(m map[string]string) string {
 	return strings.Join(keys, ", ")
 }
 
-// appInformation matches the snake_case shape produced by background.js
-// Wo({isSnakeCase: true}). Values are pinned to the same Chrome version
-// as the TLS handshake so the request tells one consistent story.
+// appInformation matches ItaClient.AppInformation (os, os_version,
+// app_version, app_build, instance_id) as serialized by the iOS client.
 type appInformation struct {
 	OS         string `json:"os"`
 	OSVersion  string `json:"os_version"`
@@ -256,9 +247,9 @@ type appInformation struct {
 	InstanceID string `json:"instance_id"`
 }
 
-// oneshotRequest mirrors the body assembled in background.js IN(...).
-// Field order matches the extension's object literal so the serialized
-// JSON is byte-identical (encoding/json honours struct field order).
+// oneshotRequest mirrors the body assembled by the iOS OneShotTranslator
+// / ItaClient oneshot path. Field order matches the app's serialization
+// so the JSON is byte-stable (encoding/json honours struct field order).
 type oneshotRequest struct {
 	Text           []string       `json:"text"`
 	TargetLang     string         `json:"target_lang"`
@@ -267,21 +258,9 @@ type oneshotRequest struct {
 	AppInformation appInformation `json:"app_information"`
 }
 
-// newOneshotClient configures a req.Client whose outbound profile matches
-// a chrome-extension service-worker fetch() byte-for-byte where it can.
-// ImpersonateChrome gives us the Chrome 120 TLS ClientHello, HTTP/2
-// SETTINGS, pseudo/header order, and a sec-ch-ua/user-agent set tied to
-// the same version. It also installs a navigation-flavoured set of common
-// headers (pragma, cache-control, upgrade-insecure-requests, sec-fetch-user)
-// that a fetch() never emits — wipe those so the WAF cannot tell us apart
-// on that axis.
 // getOneshotClient returns a process-wide cached client for the given
 // proxy URL, creating it on first use. Sharing the client across
-// requests is the single biggest latency win we have on the warm path:
-// it keeps the TLS / HTTP/2 connection in the pool so subsequent
-// requests skip the handshake entirely. Kicks off cookie-jar warmup
-// in the background on first creation so that the first real translate
-// call lands on an already-established connection.
+// requests keeps the TLS / HTTP/2 connection in the pool.
 func getOneshotClient(proxyURL string) (*req.Client, error) {
 	if c, ok := oneshotClients.Load(proxyURL); ok {
 		return c.(*req.Client), nil
@@ -293,27 +272,22 @@ func getOneshotClient(proxyURL string) (*req.Client, error) {
 	if actual, loaded := oneshotClients.LoadOrStore(proxyURL, c); loaded {
 		return actual.(*req.Client), nil
 	}
-	// First time we've seen this proxy. Kick warmup off in the
-	// background so the very first translate call can run in parallel
-	// with the TLS handshake to www.deepl.com.
 	go warmCookies(c)
 	return c, nil
 }
 
 func newOneshotClient(proxyURL string) (*req.Client, error) {
-	client := req.C().ImpersonateChrome().SetCookieJar(sharedCookieJar()).SetTimeout(oneshotTimeout)
-	for _, h := range []string{
-		"Pragma",
-		"Cache-Control",
-		"Upgrade-Insecure-Requests",
-		"Sec-Fetch-User",
-	} {
-		client.Headers.Del(h)
-	}
-	// Chrome 120 fetch() advertises gzip/deflate/br (zstd only appeared
-	// as a default in Chrome 123+). req's default of just "gzip" is a
-	// distinguishable signal — match Chrome explicitly.
-	client.SetCommonHeader("Accept-Encoding", "gzip, deflate, br")
+	// iOS TLS ClientHello via utls HelloIOS_Auto. Headers are set per
+	// request in callOneshot to match ClientInfos.appHeaders rather than
+	// a browser navigation profile.
+	client := req.C().
+		SetTLSFingerprintIOS().
+		SetCookieJar(sharedCookieJar()).
+		SetTimeout(oneshotTimeout).
+		SetUserAgent(iosUserAgent()).
+		SetCommonHeader("Accept-Encoding", "gzip, deflate, br").
+		SetCommonHeader("Accept", "*/*").
+		SetCommonHeader("Accept-Language", "en-US,en;q=0.9")
 
 	if proxyURL != "" {
 		u, err := url.Parse(proxyURL)
@@ -325,11 +299,19 @@ func newOneshotClient(proxyURL string) (*req.Client, error) {
 	return client, nil
 }
 
+// iosUserAgent approximates the CFNetwork-style UA the DeepL iOS app
+// advertises via ClientInfos.userAgent.
+func iosUserAgent() string {
+	return fmt.Sprintf(
+		"DeepL/%s (%s; build:%s; iOS %s)",
+		iosAppVersion, iosBundleID, iosAppBuild, iosOSVersion,
+	)
+}
+
 // callOneshot POSTs to the oneshot endpoint and returns the parsed JSON.
 // For anonymous traffic bearerToken is empty and we send the literal
-// header `Authorization: None` — replicating the extension's JO() wrapper
-// exactly. Omitting that header instead would put the request on a
-// different server-side auth branch.
+// header `Authorization: None` — matching ItaClient.LoginNone. Omitting
+// that header puts the request on a different server-side auth branch.
 func callOneshot(endpoint string, body []byte, bearerToken, proxyURL string) (gjson.Result, int, error) {
 	client, err := getOneshotClient(proxyURL)
 	if err != nil {
@@ -344,15 +326,14 @@ func callOneshot(endpoint string, body []byte, bearerToken, proxyURL string) (gj
 	resp, err := client.R().
 		DisableAutoReadResponse().
 		SetHeader("Content-Type", "application/json").
-		SetHeader("Accept", "*/*").
 		SetHeader("Authorization", authValue).
-		SetHeader("Origin", "chrome-extension://"+chromeExtensionID).
-		SetHeader("Sec-Fetch-Site", "cross-site").
-		SetHeader("Sec-Fetch-Mode", "cors").
-		SetHeader("Sec-Fetch-Dest", "empty").
-		SetBodyBytes(body). // SetBodyBytes pins Content-Length; using an
-		// io.Reader instead forces Transfer-Encoding: chunked, which a
-		// real fetch() with JSON.stringify body never emits.
+		// ClientInfos.appHeaders from DeepL iOS (Util/ClientInfos.swift).
+		SetHeader("x-app-os-version", iosOSVersion).
+		SetHeader("x-app-instance-id", instanceID).
+		SetHeader("x-app-session-id", sessionID).
+		SetBodyBytes(body). // pins Content-Length; an io.Reader would
+		// force Transfer-Encoding: chunked, which URLSession JSON bodies
+		// never emit.
 		Post(endpoint)
 	if err != nil {
 		return gjson.Result{}, 0, err
@@ -416,16 +397,22 @@ func TranslateByDLX(sourceLang, targetLang, text string, tagHandling string, pro
 		}, nil
 	}
 
+	// tagHandling is accepted by the public DLX API for compatibility
+	// but oneshot does not expose html/xml tag handling the way the
+	// official v2 API does — ignored upstream.
+	_ = tagHandling
+
 	reqStruct := oneshotRequest{
 		Text:       []string{text},
 		TargetLang: resolvedTarget,
 		SourceLang: resolvedSource, // empty = autodetect; omitempty drops the field
-		UsageType:  "Translate",
+		// ItaClient.OneShotUsageType.translate (also: ocr, voiceforconversations)
+		UsageType: "translate",
 		AppInformation: appInformation{
-			OS:         "brex_macOS",
-			OSVersion:  "brex_chrome_" + impersonatedChromeMajor + ".0.0.0",
-			AppVersion: chromeExtensionVersion,
-			AppBuild:   "chrome_web_store",
+			OS:         "iOS",
+			OSVersion:  iosOSVersion,
+			AppVersion: iosAppVersion,
+			AppBuild:   iosAppBuild,
 			InstanceID: instanceID,
 		},
 	}
@@ -464,6 +451,21 @@ func TranslateByDLX(sourceLang, targetLang, text string, tagHandling string, pro
 			ID:      id,
 			Code:    http.StatusTooManyRequests,
 			Message: "too many requests, your IP has been blocked by DeepL temporarily, please don't request it frequently in a short time",
+		}, nil
+	case http.StatusForbidden:
+		// iOS surfaces this as OneShot: Forbidden / AuthenticationFailed /
+		// OutdatedClient / UserBlocked depending on body; collapse to 403.
+		msg := result.Get("title").String()
+		if msg == "" {
+			msg = result.Get("message").String()
+		}
+		if msg == "" {
+			msg = "request forbidden by DeepL (auth failed, outdated client, or blocked)"
+		}
+		return DLXTranslationResult{
+			ID:      id,
+			Code:    http.StatusForbidden,
+			Message: msg,
 		}, nil
 	default:
 		return DLXTranslationResult{
