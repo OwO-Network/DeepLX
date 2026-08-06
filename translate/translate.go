@@ -42,28 +42,52 @@ import (
 // traffic hard; oneshot lives on a separate pool and accepts the literal
 // header `Authorization: None` for free requests.
 //
-// Request shape below is reverse-engineered from DeepL iOS 26.42
-// (build 5443737, bundle com.linguee.DeepLMobileTranslator):
-//   - Free URL   → https://oneshot-free.www.deepl.com/v1/translate
-//   - Pro URL    → https://oneshot-pro.www.deepl.com/v1/translate
-//                  (iOS also constructs https://oneshot. + .pro.deepl.com/v1/translate)
-//   - Body       → OneShotTranslator + ItaClient.AppInformation
-//   - Headers    → ClientInfos.appHeaders (x-app-*) + Authorization
-//   - usage_type → ItaClient.OneShotUsageType.translate
+// Request shape reverse-engineered from DeepL iOS 26.42 (build 5443737,
+// bundle com.linguee.DeepLMobileTranslator, IPA Info.plist + ItaClient.framework):
+//
+//   Transport
+//     ItaClient oneshot uses Ktor Darwin engine
+//     (io.ktor.client.engine.darwin.KtorNSURLSessionDelegate) → real
+//     URLSession TLS. We approximate that ClientHello with utls HelloIOS.
+//
+//   Free URL   → https://oneshot-free.www.deepl.com/v1/translate
+//   Pro URL    → https://oneshot. + <cell> + .pro.deepl.com/v1/translate
+//                (we keep oneshot-pro.www as the free-tier Pro fallback)
+//
+//   Headers (ClientInfos.appHeaders + LoginNone):
+//     Authorization: None          (ItaClient.LoginNone)
+//     x-app-os-version             (UIDevice.systemVersion)
+//     x-app-instance-id            (stable install UUID)
+//     x-app-session-id             (session UUID)
+//     User-Agent                   (URLSession / CFNetwork product form)
+//     Accept / Accept-Encoding     (URLSession defaults)
+//
+//   Body (ItaClient OneShotTranslationRequestDto + AppInformation):
+//     text[], target_lang, source_lang?, usage_type, app_information
+//     usage_type ∈ {translate, ocr, voiceforconversations}
+//
+// DeepL rate-limits / temporarily bans clients whose TLS + UA + app_information
+// story is inconsistent (e.g. iOS TLS fingerprint + "iOS 27.0" in the UA when
+// 27 is not a shipping OS). Keep every field on one coherent iOS profile.
 const (
 	oneshotFreeEndpoint = "https://oneshot-free.www.deepl.com/v1/translate"
 	oneshotProEndpoint  = "https://oneshot-pro.www.deepl.com/v1/translate"
 
-	// Pinned to DeepL iOS IPA (Info.plist CFBundleShortVersionString /
-	// CFBundleVersion). Keep app_information in lockstep with the TLS
-	// fingerprint and User-Agent so the request tells one consistent story.
+	// Pinned to DeepL iOS IPA (CFBundleShortVersionString / CFBundleVersion).
 	iosAppVersion = "26.42"
 	iosAppBuild   = "5443737"
-	iosBundleID   = "com.linguee.DeepLMobileTranslator"
-	// Stable OS version reported in app_information + x-app-os-version.
-	// HelloIOS_Auto does not pin a specific iOS minor; pin a fixed value
-	// so UA / x-app-os-version / app_information stay consistent.
-	iosOSVersion = "27.0"
+
+	// Reported OS version for app_information.os_version + x-app-os-version.
+	// IPA is built against iphoneos26.5 (DTPlatformVersion). Must be a real
+	// shipping major — a future value (e.g. 27.0) combined with an iOS TLS
+	// fingerprint is rejected with HTTP 429 and can temp-ban the IP.
+	iosOSVersion = "26.0"
+
+	// CFNetwork / Darwin versions that accompany URLSession User-Agents on
+	// the same OS generation as DTPlatformVersion 26.x (build machine
+	// BuildMachineOSBuild 25E246 → Darwin 25).
+	iosCFNetworkVersion = "3826.600.41"
+	iosDarwinVersion    = "25.0.0"
 
 	// oneshot enforces a 1500-character hard cap on the total length of
 	// the `text` array for anonymous traffic (same limit the Chrome
@@ -277,16 +301,21 @@ func getOneshotClient(proxyURL string) (*req.Client, error) {
 }
 
 func newOneshotClient(proxyURL string) (*req.Client, error) {
-	// iOS TLS ClientHello via utls HelloIOS_Auto. Headers are set per
-	// request in callOneshot to match ClientInfos.appHeaders rather than
-	// a browser navigation profile.
+	// Match ItaClient's Ktor Darwin / URLSession profile:
+	//   - TLS ClientHello ≈ real iOS (utls HelloIOS_Auto)
+	//   - Cookie jar shared like URLSession's HTTPCookieStorage
+	//   - Common headers = what URLSession attaches by default
+	// Per-request headers (Authorization, x-app-*) are set in callOneshot.
 	client := req.C().
 		SetTLSFingerprintIOS().
 		SetCookieJar(sharedCookieJar()).
 		SetTimeout(oneshotTimeout).
 		SetUserAgent(iosUserAgent()).
+		// URLSession default Accept-Encoding for data tasks.
 		SetCommonHeader("Accept-Encoding", "gzip, deflate, br").
 		SetCommonHeader("Accept", "*/*").
+		// Preferred language list — mirrors a US-locale device; DeepL
+		// does not hard-require a specific value for free oneshot.
 		SetCommonHeader("Accept-Language", "en-US,en;q=0.9")
 
 	if proxyURL != "" {
@@ -299,12 +328,14 @@ func newOneshotClient(proxyURL string) (*req.Client, error) {
 	return client, nil
 }
 
-// iosUserAgent approximates the CFNetwork-style UA the DeepL iOS app
-// advertises via ClientInfos.userAgent.
+// iosUserAgent is the URLSession product-style User-Agent the app's Ktor
+// Darwin stack emits (CFBundleName/CFBundleShortVersionString + CFNetwork
+// + Darwin). Do NOT invent alternate formats (e.g. embedding the bundle
+// ID) — mismatched UA + iOS TLS fingerprint is a cheap ban signal.
 func iosUserAgent() string {
 	return fmt.Sprintf(
-		"DeepL/%s (%s; build:%s; iOS %s)",
-		iosAppVersion, iosBundleID, iosAppBuild, iosOSVersion,
+		"DeepL/%s CFNetwork/%s Darwin/%s",
+		iosAppVersion, iosCFNetworkVersion, iosDarwinVersion,
 	)
 }
 
@@ -318,6 +349,7 @@ func callOneshot(endpoint string, body []byte, bearerToken, proxyURL string) (gj
 		return gjson.Result{}, 0, err
 	}
 
+	// LoginNone → literal "None"; LoginPro/Free → "Bearer <access_token>".
 	authValue := "None"
 	if bearerToken != "" {
 		authValue = "Bearer " + bearerToken
@@ -327,7 +359,8 @@ func callOneshot(endpoint string, body []byte, bearerToken, proxyURL string) (gj
 		DisableAutoReadResponse().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Authorization", authValue).
-		// ClientInfos.appHeaders from DeepL iOS (Util/ClientInfos.swift).
+		// ClientInfos.appHeaders (Util/ClientInfos.swift) — only these three
+		// x-app-* keys exist in the iOS binary.
 		SetHeader("x-app-os-version", iosOSVersion).
 		SetHeader("x-app-instance-id", instanceID).
 		SetHeader("x-app-session-id", sessionID).
